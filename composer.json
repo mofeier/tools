@@ -1,0 +1,45 @@
+{
+    "name": "mofeier/tools",
+    "description": "这是一个通用工具类的包",
+    "type": "library",
+    "license": "MulanPSL-2.0",
+    "autoload": {
+        "psr-4": {
+            "Mofeier\\Tools\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "莫斐",
+            "email": "zyk96321@163.com"
+        }
+    ],
+    "minimum-stability": "dev",
+    "require": {
+        "php": ">=8.0",
+        "ext-bcmath": "*",
+        "ext-mbstring": "*",
+        "ext-json": "*"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^9.0"
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Mofeier\\Tools\\Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "test": "phpunit",
+        "example": "php examples/usage.php"
+    },
+    "keywords": [
+        "tools",
+        "utility",
+        "message",
+        "converter",
+        "math",
+        "calculator",
+        "php8"
+    ]
+}
