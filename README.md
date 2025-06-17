@@ -56,7 +56,7 @@ $result = Tools::code(200)->data(['from' => 'tools'])->json();
 $direct = Tools::json(['code' => 201, 'msg' => 'Created']);
 
 // 字符串转换
-$tree = Tools::str_array_to_tree([
+$tree = Tools::array_to_tree([
     ['id' => 1, 'parent_id' => 0, 'name' => '根节点'],
     ['id' => 2, 'parent_id' => 1, 'name' => '子节点']
 ]);
@@ -233,10 +233,10 @@ $flatArray = [
     ['id' => 2, 'parent_id' => 1, 'name' => '子节点1'],
     ['id' => 3, 'parent_id' => 1, 'name' => '子节点2']
 ];
-$tree = Tools::str_array_to_tree($flatArray);
+$tree = Tools::array_to_tree($flatArray);
 
 // 树形转一维数组（非递归）
-$flatAgain = Tools::str_tree_to_array($tree);
+$flatAgain = Tools::tree_to_array($tree);
 ```
 
 #### 编码转换
@@ -293,12 +293,22 @@ $grouped = Tools::util_array_group_by($array, 'category');
 // 生成UUID
 $uuid = Tools::util_generate_uuid();
 
-// 生成随机字符串
+// 生成随机字符串，不要求唯一性的
 $random = Tools::util_generate_random_string(10);
+
+// 生成随机码，例如验证码，不要求唯一性的
+$randomCode = Tools::util_generate_random_code(6， true, true); // 例如: 123456
 
 // 安全随机数
 $secureInt = Tools::util_secure_random_int(1, 100);
 $secureBytes = Tools::util_secure_random_bytes(16);
+
+// 生成唯一订单号
+$orderNo = Tools::build_order_sn();  // 20250617150617123456
+$orderNo = Tools::build_order_sn('ORD', '-', 24);  // ORD-20250617150622-123456
+
+// 生成推荐码，唯一性高
+$reCode = Tools::build_redcode(6); // 例如: 默认6位， K7N4P8
 ```
 
 #### 验证器
@@ -312,6 +322,9 @@ $isValid = Tools::util_validate_mobile('13800138000');
 
 // 身份证验证（中国）
 $isValid = Tools::util_validate_id_card('110101199001011234');
+
+// 国内车牌号验证（中国，含特殊车牌）
+$isValid = Tools::validate_car_no('京A12345');
 ```
 
 #### 格式化

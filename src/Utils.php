@@ -171,6 +171,43 @@ class Utils
         }
         return $randomString;
     }
+    /**
+     * 使用 PHP 8 特性生成随机码：可数字，大小写字母混合
+     * 
+     * @param int $length 验证码长度，范围 4-12
+     * @param bool $includeLetters 是否包含字母
+     * @param bool $useUppercase 是否包含大写字母（仅在包含字母时有效）
+     * @return string 生成的随机验证码
+     */
+    public static function util_generate_random_code( int $length = 6, bool $includeLetters = false, bool $useUppercase = false): string 
+    {
+        // 验证参数合法性
+        if ($length < 4 || $length > 12) {
+            // throw new \InvalidArgumentException("验证码长度必须在 4-12 之间");
+            return  "验证码长度必须在 4-12 之间";
+        }
+        
+        // 定义基础字符集
+        $charSets = [
+            'numeric' => '0123456789',
+            'lowercase' => 'abcdefghijklmnopqrstuvwxyz',
+            'uppercase' => 'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
+        ];
+        
+        // 构建可用字符集
+        $availableChars = $charSets['numeric'];
+        if ($includeLetters) {
+            $availableChars .= $charSets['lowercase'];
+            if ($useUppercase) {
+                $availableChars .= $charSets['uppercase'];
+            }
+        }
+        // 使用箭头函数和数组填充生成验证码
+        return implode('', array_map(
+            fn() => $availableChars[random_int(0, strlen($availableChars) - 1)],
+            array_fill(0, $length, null)
+        ));
+    }
 
     /**
      * 文件大小格式化
@@ -304,4 +341,246 @@ class Utils
     {
         return random_bytes($length);
     }
+
+    /**
+     * 生成唯一订单号
+     * @param string $prefix 订单号前缀，默认为 ''
+     * @param int $length 订单号总长度（包括前缀），默认为 16
+     * @param bool $separator 是否使用连接符，默认为 ''
+     * @return string 订单号
+     */
+    public static function build_order_sn(string $prefix = '', string $separator = '', int $length = 12): string {
+        // 验证长度（不包括前缀、日期和连接符，建议至少8位以保证唯一性）
+        $length = max(8, min($length, 20));
+        
+        // 获取当前日期 (YYYYMMDD)
+        $dateStr = date('YmdHis');
+        
+        // 生成唯一标识符（基于微秒时间戳和随机数）
+        $microTime = (string) (int) (microtime(true) * 1_000_000); // PHP 8 更精确的微秒处理
+        $randomBytes = random_bytes(4); // PHP 8 推荐的强随机数生成
+        $randomPart = sprintf('%04d', unpack('N', $randomBytes)[1] % 10_000);
+        
+        // 使用 uniqid 结合微秒时间戳增强唯一性
+        $uniquePart = substr(hash('sha256', $microTime . $randomPart), 0, 16);
+        
+        // 组合并使用 Base36 编码
+        $rawId = $uniquePart . $randomPart;
+        $uniqueId = strtoupper(base_convert($rawId, 16, 36));
+        
+        // 截取到指定长度
+        $uniqueId = substr($uniqueId, 0, $length);
+        
+        // 返回格式化的订单号
+        return "{$prefix}{$separator}{$dateStr}{$separator}{$uniqueId}";
+    }
+    /**
+     * 生成推荐码，默认6,长度可定
+     * @param int $length 订单号总长度（包括前缀），默认为 16
+     * @return string 订单号
+     */
+    public static function build_redcode(int $length = 6): string {
+        // 验证长度（建议至少6位以保证唯一性）
+        $length = max(6, min($length, 12));
+        
+        // 获取微秒时间戳增强唯一性
+        $microTime = (string) (int) (microtime(true) * 1_000_000);
+        
+        // 生成随机字节
+        $randomBytes = random_bytes(8); // PHP 8 强随机数生成
+        $randomPart = substr(hash('sha256', $randomBytes . $microTime), 0, 16);
+        
+        // 使用 Base36 编码（生成英文大写字母+数字）
+        $code = strtoupper(base_convert($randomPart, 16, 36));
+        
+        // 截取到指定长度
+        $code = substr($code, 0, $length);
+        
+        return $code;
+    }
+
+    /**
+     * 验证中国车牌号（包括燃油车、新能源车及特殊车牌）
+     * 
+     * @param string $plateNumber 待验证的车牌号
+     * @return bool|string 验证成功返回 true，失败返回错误信息
+     */
+    public static function validate_car_no(string $plateNumber): bool|string
+    {
+        // 去除空格和分隔符
+        $plateNumber = preg_replace('/\s|-|\./', '', $plateNumber);
+        $length = strlen($plateNumber);
+        
+        // 省份简称列表（34个省级行政区）
+        $provinces = [
+            '京', '津', '沪', '渝', '冀', '晋', '辽', '吉', '黑', '苏', 
+            '浙', '皖', '闽', '赣', '鲁', '豫', '鄂', '湘', '粤', '琼', 
+            '川', '贵', '云', '陕', '甘', '青', '藏', '桂', '宁', '新', 
+            '蒙', '港', '澳'
+        ];
+        
+        // 特殊车牌前缀列表
+        $specialPrefixes = [
+            '使',  // 使馆车牌
+            '领',  // 领事馆车牌
+            '警',  // 警车
+            '学',  // 教练车
+            '挂',  // 挂车
+            '港',  // 港澳入出境车
+            '澳',  // 港澳入出境车
+        ];
+        
+        // 军警车牌前缀（2位字母）
+        $militaryPrefixes = [
+            'VA', 'VB', 'VC', 'VD', 'VE', 'VF', 'VG', 'VH', 'VK', 'VM', 'VO',
+            'WA', 'WB', 'WC', 'WD', 'WE', 'WF', 'WG', 'WH', 'WK', 'WL', 'WM', 'WN', 'WO',
+            'XA', 'XB', 'XC', 'XD', 'XE', 'XF', 'XG', 'XH', 'XK', 'XL', 'XM', 'XN', 'XO',
+            'YA', 'YB', 'YC', 'YD', 'YE', 'YF', 'YG', 'YH', 'YK', 'YL', 'YM', 'YN', 'YO',
+            'ZA', 'ZB', 'ZC', 'ZD', 'ZE', 'ZF', 'ZG', 'ZH', 'ZK', 'ZL', 'ZM', 'ZN', 'ZO',
+        ];
+        
+        // 验证普通民用车牌（传统燃油车和新能源车）
+        if (in_array(mb_substr($plateNumber, 0, 1, 'UTF-8'), $provinces)) {
+            // 传统燃油车牌（7位）
+            if ($length === 7) {
+                $province = mb_substr($plateNumber, 0, 1, 'UTF-8');
+                $cityCode = mb_substr($plateNumber, 1, 1, 'UTF-8');
+                $numberPart = mb_substr($plateNumber, 2, null, 'UTF-8');
+                
+                if (!in_array($province, $provinces)) {
+                    return "省份简称错误";
+                }
+                
+                if (!preg_match('/^[A-HJ-NP-Z]$/', $cityCode)) {
+                    return "地级市代码错误（不含I、O）";
+                }
+                
+                if (!preg_match('/^[0-9A-HJ-NP-Z]{5}$/', $numberPart)) {
+                    return "传统车牌号码部分包含非法字符";
+                }
+                
+                return true;
+            }
+            
+            // 新能源车牌（8位）
+            elseif ($length === 8) {
+                $province = mb_substr($plateNumber, 0, 1, 'UTF-8');
+                $cityCode = mb_substr($plateNumber, 1, 1, 'UTF-8');
+                $numberPart = mb_substr($plateNumber, 2, null, 'UTF-8');
+                $energyType = mb_substr($numberPart, 0, 1, 'UTF-8');
+                
+                if (!in_array($province, $provinces)) {
+                    return "省份简称错误";
+                }
+                
+                if (!preg_match('/^[A-HJ-NP-Z]$/', $cityCode)) {
+                    return "地级市代码错误（不含I、O）";
+                }
+                
+                if (!in_array($energyType, ['D', 'F'])) {
+                    return "新能源车牌第3位必须为D（纯电）或F（非纯电）";
+                }
+                
+                if (!preg_match('/^[0-9A-HJ-NP-Z]{5}$/', mb_substr($numberPart, 1, null, 'UTF-8'))) {
+                    return "新能源车牌号码部分包含非法字符";
+                }
+                
+                return true;
+            }
+        }
+        
+        // 验证使馆/领事馆车牌（如：使12345、沪领1234）
+        elseif (mb_substr($plateNumber, 0, 1, 'UTF-8') === '使') {
+            if ($length !== 6) {
+                return "使馆车牌长度应为6位";
+            }
+            
+            if (!preg_match('/^使[0-9]{5}$/', $plateNumber)) {
+                return "使馆车牌格式应为：使+5位数字";
+            }
+            
+            return true;
+        }
+        elseif ((mb_substr($plateNumber, 0, 2, 'UTF-8') === '港澳' && mb_substr($plateNumber, 2, 1, 'UTF-8') === '入') || 
+                (in_array(mb_substr($plateNumber, 0, 1, 'UTF-8'), ['港', '澳']) && 
+                in_array(mb_substr($plateNumber, -1, 1, 'UTF-8'), ['港', '澳']))) {
+            // 港澳入出境车牌（如：港澳入粤Z1234港）
+            return true;
+        }
+        elseif (mb_substr($plateNumber, -1, 1, 'UTF-8') === '警') {
+            // 警车车牌（如：京A1234警）
+            if ($length !== 7) {
+                return "警车车牌长度应为7位";
+            }
+            
+            if (!in_array(mb_substr($plateNumber, 0, 1, 'UTF-8'), $provinces)) {
+                return "警车车牌省份简称错误";
+            }
+            
+            if (!preg_match('/^[A-HJ-NP-Z]$/', mb_substr($plateNumber, 1, 1, 'UTF-8'))) {
+                return "警车车牌地级市代码错误";
+            }
+            
+            if (!preg_match('/^[0-9A-HJ-NP-Z]{4}警$/', mb_substr($plateNumber, 1, null, 'UTF-8'))) {
+                return "警车车牌格式错误";
+            }
+            
+            return true;
+        }
+        elseif (mb_substr($plateNumber, -1, 1, 'UTF-8') === '学') {
+            // 教练车车牌（如：京A1234学）
+            if ($length !== 7) {
+                return "教练车车牌长度应为7位";
+            }
+            
+            if (!in_array(mb_substr($plateNumber, 0, 1, 'UTF-8'), $provinces)) {
+                return "教练车车牌省份简称错误";
+            }
+            
+            if (!preg_match('/^[A-HJ-NP-Z]$/', mb_substr($plateNumber, 1, 1, 'UTF-8'))) {
+                return "教练车车牌地级市代码错误";
+            }
+            
+            if (!preg_match('/^[0-9A-HJ-NP-Z]{4}学$/', mb_substr($plateNumber, 1, null, 'UTF-8'))) {
+                return "教练车车牌格式错误";
+            }
+            
+            return true;
+        }
+        elseif (mb_substr($plateNumber, -1, 1, 'UTF-8') === '挂') {
+            // 挂车车牌（如：京A1234挂）
+            if ($length !== 7) {
+                return "挂车车牌长度应为7位";
+            }
+            
+            if (!in_array(mb_substr($plateNumber, 0, 1, 'UTF-8'), $provinces)) {
+                return "挂车车牌省份简称错误";
+            }
+            
+            if (!preg_match('/^[A-HJ-NP-Z]$/', mb_substr($plateNumber, 1, 1, 'UTF-8'))) {
+                return "挂车车牌地级市代码错误";
+            }
+            
+            if (!preg_match('/^[0-9A-HJ-NP-Z]{4}挂$/', mb_substr($plateNumber, 1, null, 'UTF-8'))) {
+                return "挂车车牌格式错误";
+            }
+            
+            return true;
+        }
+        // 验证军用车牌（如：VA12345）
+        elseif (in_array(mb_substr($plateNumber, 0, 2, 'UTF-8'), $militaryPrefixes)) {
+            if ($length !== 7) {
+                return "军用车牌长度应为7位";
+            }
+            
+            if (!preg_match('/^[A-Z]{2}[0-9A-Z]{5}$/', $plateNumber)) {
+                return "军用车牌格式错误";
+            }
+            
+            return true;
+        }
+        
+        return "未知格式的车牌号码";
+    }
+
 }

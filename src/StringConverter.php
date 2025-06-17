@@ -4,7 +4,7 @@ namespace Mofeier\Tools;
 
 /**
  * 字符数字互转类型函数类
- * 所有函数名以str_开头
+ * 
  */
 class StringConverter
 {
@@ -43,7 +43,7 @@ class StringConverter
     /**
      * 一维数组转树形结构（非递归实现）
      */
-    public static function str_array_to_tree(array $items, string $idKey = 'id', string $parentKey = 'parent_id', string $childrenKey = 'children'): array
+    public static function array_to_tree(array $items, string $idKey = 'id', string $parentKey = 'parent_id', string $childrenKey = 'children'): array
     {
         $tree = [];
         $indexed = [];
@@ -69,7 +69,7 @@ class StringConverter
     /**
      * 树形结构转一维数组（非递归实现）
      */
-    public static function str_tree_to_array(array $tree, string $childrenKey = 'children'): array
+    public static function tree_to_array(array $tree, string $childrenKey = 'children'): array
     {
         $result = [];
         $stack = $tree;
