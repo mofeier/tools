@@ -309,6 +309,12 @@ $orderNo = Tools::build_order_sn('ORD', '-', 24);  // ORD-20250617150622-123456
 
 // 生成推荐码，唯一性高
 $reCode = Tools::build_redcode(6); // 例如: 默认6位， K7N4P8
+
+// 高随机性数字ID生成器（支持动态位数增长）
+$number = Tools::build_number();          // 默认8-16位（动态增长）
+$number = Tools::build_number(10, 20);    // 自定义范围10-20位
+$number = Tools::build_number(6, 6, false);   // 固定6位（不增长）
+
 ```
 
 #### 验证器

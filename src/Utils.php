@@ -345,7 +345,7 @@ class Utils
     /**
      * 生成唯一订单号
      * @param string $prefix 订单号前缀，默认为 ''
-     * @param int $length 订单号总长度（包括前缀），默认为 16
+     * @param int $length 订单号总长度（包括前缀），默认为 12
      * @param bool $separator 是否使用连接符，默认为 ''
      * @return string 订单号
      */
@@ -375,9 +375,9 @@ class Utils
         return "{$prefix}{$separator}{$dateStr}{$separator}{$uniqueId}";
     }
     /**
-     * 生成推荐码，默认6,长度可定
-     * @param int $length 订单号总长度（包括前缀），默认为 16
-     * @return string 订单号
+     * 生成推荐码字母数字，默认6,长度可定
+     * @param int $length 推荐码总长度（包括前缀），默认为 6
+     * @return string 推荐码
      */
     public static function build_redcode(int $length = 6): string {
         // 验证长度（建议至少6位以保证唯一性）
@@ -468,23 +468,18 @@ class Utils
                 $cityCode = mb_substr($plateNumber, 1, 1, 'UTF-8');
                 $numberPart = mb_substr($plateNumber, 2, null, 'UTF-8');
                 $energyType = mb_substr($numberPart, 0, 1, 'UTF-8');
-                
                 if (!in_array($province, $provinces)) {
                     return "省份简称错误";
                 }
-                
                 if (!preg_match('/^[A-HJ-NP-Z]$/', $cityCode)) {
                     return "地级市代码错误（不含I、O）";
                 }
-                
                 if (!in_array($energyType, ['D', 'F'])) {
                     return "新能源车牌第3位必须为D（纯电）或F（非纯电）";
                 }
-                
                 if (!preg_match('/^[0-9A-HJ-NP-Z]{5}$/', mb_substr($numberPart, 1, null, 'UTF-8'))) {
                     return "新能源车牌号码部分包含非法字符";
                 }
-                
                 return true;
             }
         }
@@ -582,5 +577,60 @@ class Utils
         
         return "未知格式的车牌号码";
     }
-
+    /**
+     * 高随机性数字ID生成器（支持动态位数增长）
+     * @param int $minLength 最小位数，默认8位
+     * @param int $maxLength 最大位数，默认16位
+     * @param bool $autoIncrement 是否根据时间自动增加位数
+     * @return string 生成的随机数字字符串
+     */
+    function build_number(int $minLength = 8, int $maxLength = 16, bool $autoIncrement = true): string {
+        // 参数验证
+        if ($minLength < 6) $minLength = 6;
+        if ($maxLength > 32) $maxLength = 32;
+        if ($minLength > $maxLength) $minLength = $maxLength;
+        // 动态计算长度
+        $length = $minLength;
+        if ($autoIncrement) {
+            $daysSince2020 = (time() - strtotime('2025-06-06')) / (3600 * 24);
+            $growthFactor = min(floor($daysSince2020 / 180), $maxLength - $minLength);
+            $length += $growthFactor;
+        }
+        // 时间分量（提供基础唯一性和时序性）
+        $timeComponent = (string)time();
+        $timeLength = strlen($timeComponent);
+        // 随机分量（提供不可预测性）
+        $randomComponent = '';
+        $remainingLength = $length;
+        
+        // 从时间戳中提取并混淆
+        if ($timeLength >= 4 && $remainingLength > 0) {
+            $timeOffset = random_int(0, max(0, $timeLength - 4));
+            $timeFragment = substr($timeComponent, $timeOffset, min(4, $remainingLength));
+            $randomComponent .= str_shuffle($timeFragment);
+            $remainingLength -= strlen($timeFragment);
+        }
+        // 补充加密随机数
+        if ($remainingLength > 0) {
+            $randomStr = '';
+            for ($i = 0; $i < $remainingLength; $i++) {
+                // 使用加密安全随机数生成0-9的数字
+                $randomStr .= (string)random_int(0, 9);
+            }
+            $randomComponent .= $randomStr;
+        }
+        // 最终混淆（确保没有可识别的模式）
+        $finalNumber = str_shuffle($randomComponent);
+        
+        // 确保首位非零
+        if ($finalNumber[0] === '0') {
+            $nonZeroPos = strpbrk($finalNumber, '123456789');
+            if ($nonZeroPos !== false) {
+                $nonZeroIndex = strpos($finalNumber, $nonZeroPos);
+                $finalNumber[0] = $finalNumber[$nonZeroIndex];
+                $finalNumber[$nonZeroIndex] = '0';
+            }
+        }
+        return $finalNumber;
+    }
 }
