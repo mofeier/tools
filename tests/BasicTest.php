@@ -1,13 +1,15 @@
 <?php
 
-namespace Mofeier\Tools\Tests;
+namespace mofei\Tests;
 
 use PHPUnit\Framework\TestCase;
-use Mofeier\Tools\Tools;
-use Mofeier\Tools\Message;
-use Mofeier\Tools\StringConverter;
-use Mofeier\Tools\Utils;
-use Mofeier\Tools\MathCalculator;
+use mofei\Tools;
+use mofei\Message;
+use mofei\StatusCodes;
+use mofei\StringConverter;
+use mofei\Utils;
+use mofei\MathCalculator;
+use mofei\Crypto;
 
 class BasicTest extends TestCase
 {
@@ -93,7 +95,7 @@ class BasicTest extends TestCase
     public function testMessageCustomStatusCodes()
     {
         // 先清空自定义状态码
-        \Mofeier\Tools\StatusCodes::clearCustomCodes();
+        StatusCodes::clearCustomCodes();
         
         // 测试设置自定义状态码
         Message::setCustomCodes([9001 => '测试状态码']);

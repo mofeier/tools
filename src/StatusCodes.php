@@ -1,10 +1,11 @@
 <?php
 
-namespace Mofeier\Tools;
+namespace mofei;
 
 /**
  * 状态码配置类
  * 统一管理系统状态码和对应消息
+ * 使用PHP8.1+特性优化
  */
 class StatusCodes
 {
@@ -54,18 +55,9 @@ class StatusCodes
      */
     public static function getMessage(int $code): string
     {
-        // 首先检查自定义状态码
-        if (isset(self::$customCodes[$code])) {
-            return self::$customCodes[$code];
-        }
-        
-        // 然后检查默认状态码
-        if (isset(self::DEFAULT_CODES[$code])) {
-            return self::DEFAULT_CODES[$code];
-        }
-        
-        // 都没有找到返回默认消息
-        return 'Unknown Status';
+        return self::$customCodes[$code] 
+            ?? self::DEFAULT_CODES[$code] 
+            ?? 'Unknown Status';
     }
     
     /**
@@ -73,13 +65,12 @@ class StatusCodes
      */
     public static function setCustomCodes(array $codes): void
     {
-        // 确保键是整数类型
-        $intCodes = [];
-        foreach ($codes as $code => $message) {
-            $intCodes[(int)$code] = $message;
-        }
-        // 使用 + 操作符保持键值关系，而不是 array_merge
-        self::$customCodes = self::$customCodes + $intCodes;
+        // 使用PHP8.1+的array_map优化
+        $intCodes = array_combine(
+            array_map('intval', array_keys($codes)),
+            array_values($codes)
+        );
+        self::$customCodes = [...self::$customCodes, ...$intCodes];
     }
     
     /**
@@ -87,8 +78,7 @@ class StatusCodes
      */
     public static function getAllCodes(): array
     {
-        // 使用 + 操作符保持键值关系
-        return self::DEFAULT_CODES + self::$customCodes;
+        return [...self::DEFAULT_CODES, ...self::$customCodes];
     }
     
     /**
@@ -96,7 +86,8 @@ class StatusCodes
      */
     public static function exists(int $code): bool
     {
-        return isset(self::$customCodes[$code]) || isset(self::DEFAULT_CODES[$code]);
+        return array_key_exists($code, self::$customCodes) 
+            || array_key_exists($code, self::DEFAULT_CODES);
     }
     
     /**

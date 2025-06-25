@@ -1,85 +1,110 @@
 <?php
 
-namespace Mofeier\Tools;
+namespace mofei;
 
 /**
- * 数学计算类
- * 所有函数名以math_开头
- * 支持高精度计算
+ * 高精度数学计算类
+ * 使用PHP8.1+特性优化
  */
 class MathCalculator
 {
     /**
      * 高精度加法
      */
-    public static function math_bcadd(string|int|float $left, string|int|float $right, int $scale = 2): string
+    public static function add(string|int|float $num1, string|int|float $num2, int $scale = 2): string
     {
-        return bcadd((string)$left, (string)$right, $scale);
+        return bcadd((string)$num1, (string)$num2, $scale);
     }
 
     /**
      * 高精度减法
      */
-    public static function math_bcsub(string|int|float $left, string|int|float $right, int $scale = 2): string
+    public static function sub(string|int|float $num1, string|int|float $num2, int $scale = 2): string
     {
-        return bcsub((string)$left, (string)$right, $scale);
+        return bcsub((string)$num1, (string)$num2, $scale);
     }
 
     /**
      * 高精度乘法
      */
-    public static function math_bcmul(string|int|float $left, string|int|float $right, int $scale = 2): string
+    public static function mul(string|int|float $num1, string|int|float $num2, int $scale = 2): string
     {
-        return bcmul((string)$left, (string)$right, $scale);
+        return bcmul((string)$num1, (string)$num2, $scale);
     }
 
     /**
      * 高精度除法
      */
-    public static function math_bcdiv(string|int|float $left, string|int|float $right, int $scale = 2): string
+    public static function div(string|int|float $num1, string|int|float $num2, int $scale = 2): string
     {
-        if ((float)$right == 0) {
+        if (bccomp((string)$num2, '0', $scale) === 0) {
             throw new \InvalidArgumentException('Division by zero');
         }
-        return bcdiv((string)$left, (string)$right, $scale);
+        return bcdiv((string)$num1, (string)$num2, $scale);
     }
 
     /**
      * 高精度取模
      */
-    public static function math_bcmod(string|int|float $left, string|int|float $right, int $scale = 0): string
+    public static function mod(string|int|float $num1, string|int|float $num2, int $scale = 0): string
     {
-        if ((float)$right == 0) {
-            throw new \InvalidArgumentException('Division by zero');
-        }
-        return bcmod((string)$left, (string)$right, $scale);
+        return bcmod((string)$num1, (string)$num2, $scale);
     }
 
     /**
      * 高精度幂运算
      */
-    public static function math_bcpow(string|int|float $base, string|int|float $exponent, int $scale = 2): string
+    public static function pow(string|int|float $num, string|int|float $exponent, int $scale = 2): string
     {
-        return bcpow((string)$base, (string)$exponent, $scale);
+        return bcpow((string)$num, (string)$exponent, $scale);
     }
 
     /**
-     * 高精度平方根
+     * 高精度开方
      */
-    public static function math_bcsqrt(string|int|float $operand, int $scale = 2): string
+    public static function sqrt(string|int|float $num, int $scale = 2): string
     {
-        if ((float)$operand < 0) {
-            throw new \InvalidArgumentException('Square root of negative number');
-        }
-        return bcsqrt((string)$operand, $scale);
+        return bcsqrt((string)$num, $scale);
     }
 
     /**
      * 高精度比较
      */
-    public static function math_bccomp(string|int|float $left, string|int|float $right, int $scale = 2): int
+    public static function compare(string|int|float $num1, string|int|float $num2, int $scale = 2): int
     {
-        return bccomp((string)$left, (string)$right, $scale);
+        return bccomp((string)$num1, (string)$num2, $scale);
+    }
+
+    /**
+     * 格式化数字（去除多余的0）
+     */
+    public static function format(string $number): string
+    {
+        return rtrim(rtrim($number, '0'), '.');
+    }
+
+    /**
+     * 判断是否相等
+     */
+    public static function equals(string|int|float $num1, string|int|float $num2, int $scale = 2): bool
+    {
+        return self::compare($num1, $num2, $scale) === 0;
+    }
+
+    /**
+     * 判断是否大于
+     */
+    public static function greaterThan(string|int|float $num1, string|int|float $num2, int $scale = 2): bool
+    {
+        return self::compare($num1, $num2, $scale) > 0;
+    }
+
+    /**
+     * 判断是否小于
+     */
+    public static function lessThan(string|int|float $num1, string|int|float $num2, int $scale = 2): bool
+    {
+        return self::compare($num1, $num2, $scale) < 0;
     }
 
     /**

@@ -1,6 +1,6 @@
 <?php
 
-namespace Mofeier\Tools;
+namespace mofei;
 
 /**
  * 消息体类 统一API返回格式
@@ -8,6 +8,7 @@ namespace Mofeier\Tools;
  * 默认字段：code, msg, data
  * 可扩展字段和自定义状态码
  * 支持数组键值对批量设置字段
+ * 使用PHP8.1+特性优化
  */
 class Message
 {
@@ -37,30 +38,62 @@ class Message
      */
     private static float $startTime;
 
+    /**
+     * 构造函数 - 使用PHP8.1+特性
+     */
     public function __construct(array $fields = [])
     {
         if (!isset(self::$startTime)) {
             self::$startTime = microtime(true);
         }
         
+        // 初始化默认字段
         $this->data = [
-            'code' => 2000,
-            'msg' => StatusCodes::getMessage(2000),
-            'data' => []
+            'code' => 200,
+            'msg' => 'success',
+            'data' => null,
+            ...$fields // 使用数组解包操作符
         ];
-        
-        // 支持构造时传入字段数组
-        if (!empty($fields)) {
-            $this->setFields($fields);
-        }
     }
 
     /**
-     * 静态实例化
+     * 创建实例 - 支持多种参数形式
      */
-    public static function create(array $fields = []): self
+    public static function create(int|array $codeOrFields = [], string $msg = '', mixed $data = null): self
     {
-        return new self($fields);
+        if (is_array($codeOrFields)) {
+            return new self($codeOrFields);
+        }
+        
+        return new self([
+            'code' => $codeOrFields,
+            'msg' => $msg,
+            'data' => $data
+        ]);
+    }
+
+    /**
+     * 创建成功消息
+     */
+    public static function success(mixed $data = null, string $msg = 'success', int $code = 200): self
+    {
+        return new self([
+            'code' => $code,
+            'msg' => $msg,
+            'data' => $data
+        ]);
+    }
+
+    /**
+     * 创建错误消息
+     */
+    public static function error(string $msg = 'error', int $code = 500, mixed $data = null): self
+    {
+        return new self([
+            'code' => $code,
+            'msg' => $msg,
+            'data' => $data
+        ]);
     }
 
     /**
@@ -112,14 +145,14 @@ class Message
     /**
      * 实例方法：设置数据
      */
-    public function setData(array $data): self
+    public function setData(mixed $data): self
     {
         $this->data['data'] = $data;
         return $this;
     }
 
     /**
-     * 批量设置字段（支持数组键值对）
+     * 设置多个字段 - 使用数组解包
      */
     public function setFields(array $fields): self
     {
@@ -135,16 +168,12 @@ class Message
     }
 
     /**
-     * 添加字段（简化方法名）
+     * 添加额外字段
      */
-    public function add(string $field, $defaultValue = null): self
+    public function add(string $key, mixed $value): self
     {
-        $this->extraFields[$field] = $defaultValue;
-        if ($field === 'time' || $field === 'times') {
-            $this->data[$field] = number_format(microtime(true) - self::$startTime, 10);
-        } else {
-            $this->data[$field] = $defaultValue;
-        }
+        $this->data[$key] = $value;
+        $this->extraFields[$key] = true;
         return $this;
     }
 

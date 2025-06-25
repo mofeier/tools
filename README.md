@@ -1,19 +1,29 @@
-# Mofeier Tools - 通用工具包
+# mofei Tools
 
-这是一个基于PHP8+的通用工具包，提供消息体统一API返回格式、字符转换、实用工具和数学计算等功能。
+这是一个现代化的PHP工具包，提供了常用的工具函数、消息体处理和加密功能。使用PHP 8.1+特性优化，提供更好的性能和开发体验。
 
 ## 特性
 
-- **消息体管理**: 统一的API响应格式，支持链式调用和静态调用
-- **字符串转换**: 各种数据类型转换，包括数组树形转换等
-- **实用工具**: 常用的编码解码、验证、格式化等功能
-- **数学计算**: 支持高精度计算和统计函数
-- **现代架构**: 基于PHP8+，支持命名空间和自动加载
-- **易于扩展**: 模块化设计，便于后续功能扩展
+- 🚀 **现代化设计** - 使用PHP 8.1+特性，支持联合类型、数组解包等
+- 📦 **消息体构建** - 灵活的消息体构建和处理
+- 🔐 **加密功能** - 字符串加解密，支持自定义盐值
+- 🛡️ **安全加密** - 现代化加密解决方案，支持URL参数和Token加密
+- 🔄 **双引擎支持** - 同时支持OpenSSL和Sodium加密引擎
+- 📊 **状态码管理** - 完善的HTTP状态码管理
+- 🔧 **字符串工具** - 驼峰、下划线等命名转换
+- 🧮 **高精度计算** - 基于BCMath的高精度数学运算
+- ⚡ **链式调用** - 支持优雅的链式调用语法
+- 🎯 **静态/实例** - 同时支持静态和实例调用方式
+
+## 环境要求
+
+- PHP >= 8.1
+- ext-json
+- ext-mbstring
+- ext-bcmath
+- ext-openssl
 
 ## 安装
-
-### 通过Composer安装
 
 ```bash
 composer require mofeier/tools
@@ -33,70 +43,71 @@ require_once 'vendor/autoload.php';
 
 ```php
 <?php
-require_once 'vendor/autoload.php';
 
-use Mofeier\Tools\Tools;
-use Mofeier\Tools\Message;
+use mofei\Message;
+use mofei\Tools;
+use mofei\Utils;
+use mofei\StringConverter;
+use mofei\MathCalculator;
+use mofei\Crypto;
 
-// 消息体处理 - 基本用法
-$result = Message::create()->code(200)->msg('成功')->data(['user' => 'mofeier'])->result();
-echo json_encode($result, JSON_UNESCAPED_UNICODE);
-// 输出: {"code":200,"msg":"成功","data":{"user":"mofeier"}}
+// 创建消息体 - 支持多种方式
+$message = Message::success(['user_id' => 123], '操作成功')
+    ->add('timestamp', time());
 
-// 消息体处理 - 构造时设置字段
-$message = Message::create(['total' => 100, 'page' => 1])->code(200)->json();
-echo $message;
-// 输出: {"code":200,"msg":"Success","data":[],"total":100,"page":1}
+echo $message->json(); // 输出JSON格式
 
-// 消息体处理 - 静态调用
-$json = Message::code(200)->data(['test' => 'static'])->json();
-
-// 消息体处理 - Tools简化调用
-$result = Tools::code(200)->data(['from' => 'tools'])->json();
-$direct = Tools::json(['code' => 201, 'msg' => 'Created']);
+// 使用工具类
+$result = Tools::success(['data' => 'value']);
+$error = Tools::error('参数错误', 400);
 
 // 字符串转换
-$tree = Tools::array_to_tree([
-    ['id' => 1, 'parent_id' => 0, 'name' => '根节点'],
-    ['id' => 2, 'parent_id' => 1, 'name' => '子节点']
-]);
+$camelCase = StringConverter::toCamelCase('user_name'); // userName
+$snakeCase = StringConverter::toSnakeCase('userName'); // user_name
+$pascalCase = StringConverter::toPascalCase('user_name'); // UserName
 
-// 实用工具
-$json = Tools::util_json_encode(['name' => 'mofeier']);
-$array = Tools::util_json_decode($json);
+// 高精度计算
+$sum = MathCalculator::add('0.1', '0.2', 2); // "0.30"
+$result = MathCalculator::div('10', '3', 4); // "3.3333"
+$isEqual = MathCalculator::equals('0.1', '0.10'); // true
 
-// 数学计算
-$result = Tools::math_bcadd('10.5', '20.3', 2); // 30.80
+// 加密功能
+$salt = Crypto::generateSalt();
+$encrypted = Crypto::encrypt('敏感数据', $salt);
+$decrypted = Crypto::decrypt($encrypted, $salt);
+
+// 工具函数
+$json = Utils::util_json_encode(['key' => 'value']);
+$encrypted = Utils::util_encrypt('hello world');
+$hash = Utils::util_hash('password', 'my_salt');
 ```
 
 ## 详细使用说明
 
-### 1. 消息体 (Message)
-
-消息体类提供统一的API响应格式，支持链式调用、静态调用和独立方法调用。
+### Message 消息体类
 
 #### 基本用法
 
 ```php
-use Mofeier\Tools\Message;
+use mofei\Message;
 
-// 基本使用
-$message = new Message();
-$result = $message->result();
-// 输出: ['code' => 2000, 'msg' => 'Success', 'data' => []]
+// 创建基本消息 - 支持多种参数形式
+$msg = Message::create(200, 'success', ['id' => 1]);
+// 或者
+$msg = Message::create(['code' => 200, 'msg' => 'success', 'data' => ['id' => 1]]);
+
+// 快速创建成功消息
+$success = Message::success(['user' => 'john'], '登录成功');
+
+// 快速创建错误消息
+$error = Message::error('用户不存在', 404);
 
 // 链式调用
-$result = (new Message())
-    ->code(200)
-    ->msg('操作成功')
-    ->data(['user_id' => 123])
-    ->result();
-
-// 静态调用
-$result = Message::code(200)->msg('成功')->data(['test' => 'value'])->result();
-
-// 静态创建实例
-$message = Message::create(['total' => 100, 'page' => 1]);
+$message = Message::create()
+    ->setCode(200)
+    ->setMsg('操作成功')
+    ->setData(['result' => true])
+    ->add('timestamp', time());
 ```
 
 #### 批量设置字段
@@ -171,57 +182,58 @@ $json = Tools::json(['code' => 201, 'msg' => 'Created']);
 $xml = Tools::xml(['code' => 200, 'data' => ['test' => 'value']]);
 ```
 
-#### 自定义状态码
+### StatusCodes 状态码类
 
 ```php
-// 设置自定义状态码（使用独立的StatusCodes类）
-Message::setCustomCodes([
-    3001 => '自定义成功',
-    3002 => '自定义失败'
-]);
+use mofei\StatusCodes;
 
-$result = Message::code(3001)->result();
-// 输出: ['code' => 3001, 'msg' => '自定义成功', 'data' => []]
+// 获取状态码消息
+$message = StatusCodes::getMessage(404); // "Not Found"
 
 // 检查状态码是否存在
-if (Message::codeExists(3001)) {
-    echo '状态码存在';
-}
+$exists = StatusCodes::exists(200); // true
+
+// 设置自定义状态码
+StatusCodes::setCustomCodes([
+    9001 => '自定义错误',
+    9002 => '业务异常'
+]);
 
 // 获取所有状态码
-$allCodes = Message::getAllCodes();
+$allCodes = StatusCodes::getAllCodes();
 ```
 
-#### Tools类简化调用
+### Tools 主工具类
 
 ```php
-use Mofeier\Tools\Tools;
+use mofei\Tools;
 
-// 简化的消息体调用
-$result = Tools::code(200)->data(['from' => 'tools'])->json();
-$message = Tools::msg(['total' => 100])->code(200)->result();
-
-// 直接输出格式
-$json = Tools::json(['code' => 201, 'msg' => 'Created']);
-$xml = Tools::xml(['code' => 200, 'data' => ['test' => 'value']]);
+// 快速创建消息
+$success = Tools::success(['data' => 'value'], '操作成功');
+$error = Tools::error('操作失败', 500);
+$custom = Tools::message(201, '创建成功', ['id' => 123]);
 ```
 
-### 2. 字符串转换 (StringConverter)
-
-所有字符串转换函数以`str_`开头。
-
-#### 基本类型转换
+### StringConverter 字符串转换类
 
 ```php
-// 类型转换
-$int = Tools::str_to_int('123');        // 123
-$float = Tools::str_to_float('123.45'); // 123.45
-$bool = Tools::str_to_bool('true');     // true
+use mofei\StringConverter;
 
-// 字符串操作
-$snake = Tools::str_camel_to_snake('userName');  // user_name
-$camel = Tools::str_snake_to_camel('user_name'); // userName
-$array = Tools::str_to_array('a,b,c', ',');     // ['a', 'b', 'c']
+// 驼峰命名转换
+$camelCase = StringConverter::toCamelCase('user_name'); // "userName"
+$camelCase = StringConverter::toCamelCase('user-name', '-'); // "userName"
+
+// 下划线命名转换
+$snakeCase = StringConverter::toSnakeCase('userName'); // "user_name"
+
+// 短横线命名转换
+$kebabCase = StringConverter::toKebabCase('userName'); // "user-name"
+
+// 帕斯卡命名转换
+$pascalCase = StringConverter::toPascalCase('user_name'); // "UserName"
+
+// 字符串截取（支持中文）
+$substr = StringConverter::substr('你好世界', 0, 2); // "你好"
 ```
 
 #### 数组树形转换
@@ -251,24 +263,43 @@ $binary = Tools::str_to_binary('A');   // 01000001
 $str = Tools::str_from_binary('01000001'); // A
 ```
 
-### 3. 实用工具 (Utils)
-
-所有实用工具函数以`util_`开头。
-
-#### 编码解码
+### Utils 工具函数类
 
 ```php
-// JSON操作
-$json = Tools::util_json_encode($data);
-$array = Tools::util_json_decode($json);
+use mofei\Utils;
 
-// Base64操作
-$base64 = Tools::util_base64_encode($data);
-$decoded = Tools::util_base64_decode($base64);
+// JSON 操作
+$json = Utils::util_json_encode(['key' => 'value']);
+$array = Utils::util_json_decode($json);
 
-// URL操作
-$query = Tools::util_url_encode(['name' => '张三', 'age' => 25]);
-$array = Tools::util_url_decode('name=张三&age=25');
+// Base64 操作
+$encoded = Utils::util_base64_encode(['data' => 'hello']);
+$decoded = Utils::util_base64_decode($encoded);
+
+// 哈希操作
+$hash = Utils::util_hash('password', 'salt', 'sha256');
+$isValid = Utils::util_verify_hash('password', $hash, 'salt');
+
+// 密码哈希
+$passwordHash = Utils::util_password_hash('mypassword');
+$isCorrect = Utils::util_password_verify('mypassword', $passwordHash);
+
+// URL 操作
+$query = Utils::util_url_encode(['name' => 'john', 'age' => 25]);
+$array = Utils::util_url_decode($query);
+
+// 数组操作
+$filtered = Utils::util_array_filter_empty(['a' => 1, 'b' => '', 'c' => null]);
+$flattened = Utils::util_array_flatten(['a' => [1, 2], 'b' => [3, 4]]);
+
+// 字符串操作
+$isJson = Utils::util_is_json('{"key":"value"}'); // true
+$random = Utils::util_random_string(10);
+$uuid = Utils::util_generate_uuid();
+
+// 时间操作
+$formatted = Utils::util_format_time(time(), 'Y-m-d H:i:s');
+$timestamp = Utils::util_parse_time('2023-01-01 12:00:00');
 ```
 
 #### 数组操作
@@ -315,6 +346,9 @@ $number = Tools::build_number();          // 默认8-16位（动态增长）
 $number = Tools::build_number(10, 20);    // 自定义范围10-20位
 $number = Tools::build_number(6, 6, false);   // 固定6位（不增长）
 
+// 生成许可证序列号license
+$license = Tools::build_license();
+
 ```
 
 #### 验证器
@@ -353,21 +387,30 @@ $hash = Tools::util_password_hash('password123');
 $isValid = Tools::util_password_verify('password123', $hash);
 ```
 
-### 4. 数学计算 (MathCalculator)
-
-所有数学函数以`math_`开头。
-
-#### 高精度计算
+### MathCalculator 高精度数学计算类
 
 ```php
-// 高精度四则运算
-$sum = Tools::math_bcadd('0.1', '0.2', 4);      // 0.3000
-$diff = Tools::math_bcsub('1.0', '0.3', 4);     // 0.7000
-$product = Tools::math_bcmul('0.1', '0.3', 4);  // 0.0300
-$quotient = Tools::math_bcdiv('1', '3', 6);     // 0.333333
+use mofei\MathCalculator;
 
-// 高精度比较
-$compare = Tools::math_bccomp('0.1', '0.2', 2); // -1 (小于)
+// 基本运算 - 支持多种数据类型
+$sum = MathCalculator::add('0.1', 0.2, 2); // "0.30"
+$diff = MathCalculator::sub(1.0, '0.3', 2); // "0.70"
+$product = MathCalculator::mul(0.1, 3, 2); // "0.30"
+$quotient = MathCalculator::div('1', '3', 4); // "0.3333"
+
+// 高级运算
+$power = MathCalculator::pow('2', '3', 0); // "8"
+$sqrt = MathCalculator::sqrt('9', 2); // "3.00"
+$mod = MathCalculator::mod('10', '3'); // "1"
+
+// 比较运算
+$compare = MathCalculator::compare('0.1', '0.2'); // -1
+$equals = MathCalculator::equals('0.1', '0.10'); // true
+$greater = MathCalculator::greaterThan('0.2', '0.1'); // true
+$less = MathCalculator::lessThan('0.1', '0.2'); // true
+
+// 格式化
+$formatted = MathCalculator::format('1.2000'); // "1.2"
 ```
 
 #### 基本数学运算
@@ -459,7 +502,106 @@ MulanPSL-2.0
 
 - 莫斐 (zyk96321@163.com)
 
+### Crypto 加密类（传统）
+
+```php
+use mofei\Crypto;
+
+// 生成随机盐值
+$salt = Crypto::generateSalt(32);
+
+// 字符串加密/解密
+$encrypted = Crypto::encrypt('敏感数据', $salt);
+$decrypted = Crypto::decrypt($encrypted, $salt);
+
+// 哈希操作
+$hash = Crypto::hash('数据', $salt, 'sha256');
+$isValid = Crypto::verifyHash('数据', $hash, $salt);
+
+// 密码哈希（推荐用于密码存储）
+$passwordHash = Crypto::passwordHash('mypassword');
+$isCorrect = Crypto::passwordVerify('mypassword', $passwordHash);
+```
+
+### SecureCrypto 安全加密工具（推荐）
+
+```php
+use mofei\SecureCrypto;
+use mofei\Utils;
+
+// URL安全加密 - 适合URL参数传递
+$userId = 12345;
+$encryptedId = SecureCrypto::encryptForUrl((string)$userId, 'my_secret_key');
+echo "URL参数: ?user=" . $encryptedId;
+
+// URL安全解密
+$decryptedId = SecureCrypto::decryptFromUrl($encryptedId, 'my_secret_key');
+echo "用户ID: " . $decryptedId; // 输出: 12345
+
+// Token加密 - 支持过期时间
+$userData = json_encode(['user_id' => 123, 'role' => 'admin']);
+$token = SecureCrypto::encryptForToken($userData, 'jwt_secret', 3600); // 1小时后过期
+echo "Token: " . $token;
+
+// Token解密和验证
+try {
+    $decryptedData = SecureCrypto::decryptFromToken($token, 'jwt_secret');
+    $user = json_decode($decryptedData, true);
+    echo "用户角色: " . $user['role'];
+} catch (Exception $e) {
+    echo "Token无效或已过期: " . $e->getMessage();
+}
+
+// 使用Utils工具类的便捷方法
+$encryptedUrl = Utils::util_encrypt_url('sensitive_data');
+$decryptedUrl = Utils::util_decrypt_url($encryptedUrl);
+
+$tokenWithExpiry = Utils::util_encrypt_token('session_data', null, 1800); // 30分钟
+$sessionData = Utils::util_decrypt_token($tokenWithExpiry);
+
+// 生成安全随机字符串
+$randomKey = Utils::util_secure_random(32, true); // URL安全的随机字符串
+echo "随机密钥: " . $randomKey;
+
+// 安全字符串比较（防时序攻击）
+$isEqual = Utils::util_secure_compare($expectedToken, $userToken);
+var_dump($isEqual);
+
+// 高级用法 - 自定义配置
+$crypto = new SecureCrypto(
+    'master_key',
+    SecureCrypto::ENGINE_SODIUM,  // 使用Sodium引擎
+    SecureCrypto::MODE_URL_SAFE   // URL安全模式
+);
+
+$encrypted = $crypto->encrypt('data');
+$decrypted = $crypto->decrypt($encrypted);
+
+// 获取加密信息
+$info = $crypto->getInfo();
+print_r($info);
+```
+
 ## 更新日志
+
+### v2.1.0
+- 🆕 **新增**: `SecureCrypto`类 - 现代化安全加密解决方案
+- 🔄 **双引擎支持**: 同时支持OpenSSL和Sodium加密引擎
+- 🔗 **URL安全加密**: 专门优化的URL参数加密功能
+- 🎫 **Token系统**: 支持过期时间的Token加密解密
+- 🛡️ **安全增强**: 防时序攻击的字符串比较功能
+- 🔧 **工具扩展**: 在`Utils`类中新增多个安全加密工具方法
+- 📚 **完整文档**: 新增详细的加密使用指南和最佳实践
+- ✅ **测试覆盖**: 为新功能添加全面的单元测试
+
+### v2.0.0
+- 🚀 升级到PHP 8.1+，使用现代PHP特性
+- 🔄 命名空间从`Mofeier\Tools`改为`mofei`
+- 🔐 新增完整的加密功能模块
+- ⚡ 优化性能，使用数组解包、联合类型等特性
+- 📦 改进消息体构建，支持多种参数形式
+- 🧮 增强数学计算类，支持更多数据类型
+- 📝 完善文档和示例
 
 ### v1.0.0
 - 初始版本发布

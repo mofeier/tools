@@ -1,17 +1,18 @@
 <?php
 
-namespace Mofeier\Tools;
+namespace mofei;
 
 /**
  * 常用工具函数类
  * 所有函数名以util_开头
+ * 使用PHP8.1+特性优化
  */
 class Utils
 {
     /**
      * JSON编码
      */
-    public static function util_json_encode($data, int $flags = JSON_UNESCAPED_UNICODE): string|false
+    public static function util_json_encode(mixed $data, int $flags = JSON_UNESCAPED_UNICODE): string|false
     {
         return json_encode($data, $flags);
     }
@@ -27,12 +28,12 @@ class Utils
     /**
      * Base64编码
      */
-    public static function util_base64_encode($data): string
+    public static function util_base64_encode(mixed $data): string
     {
-        if (is_array($data)) {
+        if (is_array($data) || is_object($data)) {
             $data = json_encode($data, JSON_UNESCAPED_UNICODE);
         }
-        return base64_encode($data);
+        return base64_encode((string)$data);
     }
 
     /**
@@ -45,6 +46,82 @@ class Utils
             return json_decode($decoded, true);
         }
         return $decoded;
+    }
+
+    /**
+     * URL安全加密 - 适用于URL参数
+     * @param string $data 要加密的数据
+     * @param string|null $key 加密密钥
+     * @return string URL安全的加密字符串
+     */
+    public static function util_encrypt_url(string $data, ?string $key = null): string
+    {
+        return SecureCrypto::encryptForUrl($data, $key);
+    }
+
+    /**
+     * URL安全解密
+     * @param string $encrypted 加密的数据
+     * @param string|null $key 解密密钥
+     * @return string 解密后的字符串
+     */
+    public static function util_decrypt_url(string $encrypted, ?string $key = null): string
+    {
+        return SecureCrypto::decryptFromUrl($encrypted, $key);
+    }
+
+    /**
+     * Token加密 - 适用于JWT等场景
+     * @param string $data 要加密的数据
+     * @param string|null $key 加密密钥
+     * @param int $expiry 过期时间（秒），0表示不过期
+     * @return string Token格式的加密字符串
+     */
+    public static function util_encrypt_token(string $data, ?string $key = null, int $expiry = 0): string
+    {
+        return SecureCrypto::encryptForToken($data, $key, $expiry);
+    }
+
+    /**
+     * Token解密
+     * @param string $encrypted 加密的Token
+     * @param string|null $key 解密密钥
+     * @return string 解密后的字符串
+     * @throws \Exception 当Token过期时抛出异常
+     */
+    public static function util_decrypt_token(string $encrypted, ?string $key = null): string
+    {
+        return SecureCrypto::decryptFromToken($encrypted, $key);
+    }
+
+    /**
+     * 生成安全随机字符串
+     * @param int $length 长度
+     * @param bool $urlSafe 是否URL安全
+     * @return string 随机字符串
+     */
+    public static function util_secure_random(int $length = 32, bool $urlSafe = false): string
+    {
+        return SecureCrypto::generateSecureRandom($length, $urlSafe);
+    }
+
+    /**
+     * 安全字符串比较（防时序攻击）
+     * @param string $known 已知字符串
+     * @param string $user 用户输入字符串
+     * @return bool 比较结果
+     */
+    public static function util_secure_compare(string $known, string $user): bool
+    {
+        return SecureCrypto::secureCompare($known, $user);
+    }
+
+    /**
+     * 生成随机盐值
+     */
+    public static function util_generate_salt(int $length = 32): string
+    {
+        return bin2hex(random_bytes($length / 2));
     }
 
     /**
@@ -632,5 +709,53 @@ class Utils
             }
         }
         return $finalNumber;
+    }
+    /**
+     * Generates a robust, unique license key using a millisecond timestamp.
+     * Format: XXXX-XXXX-XXXX-XXXX (16 chars, 4 groups of 4 chars)
+     * @throws Exception if cryptographic functions fail
+     * @return string License key
+     */
+    public function build_license(): string {
+        // Character set: A-Z, 0-9 (36 chars, safe for readability)
+        $chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+        $charLength = strlen($chars);
+
+        try {
+            // Get millisecond timestamp and ensure uniqueness with counter
+            static $counter = 0; // Static counter for same-millisecond calls
+            $timestamp = (string)(int)(microtime(true) * 1000); // e.g., 1635781234567
+            $counter++; //  // Increment for concurrent calls
+
+            // Generate 8 chars from timestamp + counter
+            $seed = $timestamp . $counter;
+            $hash = substr(hash('sha256', $seed), 0, 8); // 8-char SHA-256 hash
+            $hashChars = '';
+            foreach (str_split($hash, 2) as $pair) {
+                $index = hexdec($pair) % $charLength; // Map hex to char index
+                $hashChars .= $chars[$index];
+            }
+
+            // Generate 7 random chars
+            $random = '';
+            for ($i = 0; $i < 7; $i++) {
+                $random .= $chars[random_int(0, $charLength - 1)];
+            }
+
+            // Combine hash (8) + random (7) = 15 chars
+            $rawKey = strtoupper($hashChars . $random);
+
+            // Generate check digit using SHA-256
+            $checkSum = hexdec(substr(hash('sha256', $rawKey), 0, 4));
+            $checkDigit = $chars[$checkSum % $charLength];
+
+            // Format: XXXX-XXXX-XXXX-XXXX
+            return substr($rawKey, 0, 4) . '-' .
+                   substr($rawKey, 4, 4) . '-' .
+                   substr($rawKey, 8, 4) . '-' .
+                   substr($rawKey, 12, 3) . $checkDigit;
+        } catch (\Exception $e) {
+            throw new \Exception('Failed to generate license key: ' . $e->getMessage());
+        }
     }
 }

@@ -1,10 +1,10 @@
 <?php
 
-namespace Mofeier\Tools;
+namespace mofei;
 
 /**
- * 字符数字互转类型函数类
- * 
+ * 字符串转换工具类
+ * 使用PHP8.1+特性优化
  */
 class StringConverter
 {
@@ -109,20 +109,38 @@ class StringConverter
     }
 
     /**
-     * 驼峰转下划线
+     * 转换为下划线命名
      */
-    public static function str_camel_to_snake(string $str): string
+    public static function toSnakeCase(string $str): string
     {
         return strtolower(preg_replace('/([a-z])([A-Z])/', '$1_$2', $str));
     }
 
     /**
-     * 下划线转驼峰
+     * 转换为短横线命名
      */
-    public static function str_snake_to_camel(string $str, bool $capitalizeFirst = false): string
+    public static function toKebabCase(string $str): string
     {
-        $str = str_replace('_', '', ucwords($str, '_'));
-        return $capitalizeFirst ? $str : lcfirst($str);
+        return strtolower(preg_replace('/([a-z])([A-Z])/', '$1-$2', $str));
+    }
+
+    /**
+     * 转换为帕斯卡命名
+     */
+    public static function toPascalCase(string $str, string $separator = '_'): string
+    {
+        return implode('', array_map(ucfirst(...), array_map(strtolower(...), explode($separator, $str))));
+    }
+
+    /**
+     * 转换为驼峰命名
+     */
+    public static function toCamelCase(string $str, string $separator = '_'): string
+    {
+        $words = explode($separator, $str);
+        $result = array_shift($words) ?? '';
+        
+        return $result . implode('', array_map(ucfirst(...), array_map(strtolower(...), $words)));
     }
 
     /**
@@ -193,7 +211,7 @@ class StringConverter
     /**
      * 字符串截取（支持中文）
      */
-    public static function str_substr(string $str, int $start, ?int $length = null, string $encoding = 'UTF-8'): string
+    public static function substr(string $str, int $start, ?int $length = null, string $encoding = 'UTF-8'): string
     {
         return mb_substr($str, $start, $length, $encoding);
     }

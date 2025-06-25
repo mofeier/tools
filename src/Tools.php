@@ -1,37 +1,35 @@
 <?php
 
-namespace Mofeier\Tools;
+namespace mofei;
 
 /**
- * 主工具类
- * 整合所有工具功能的统一入口
+ * 主工具类 - 整合消息体相关功能
+ * 使用PHP8.1+特性优化
  */
 class Tools
 {
     /**
-     * 获取消息体实例
+     * 创建成功消息
      */
-    public static function message(array $fields = []): Message
+    public static function success(mixed $data = null, string $msg = 'success', int $code = 200): Message
     {
-        return Message::create($fields);
+        return Message::success($data, $msg, $code);
     }
 
     /**
-     * 消息体相关方法（简化版）
+     * 创建错误消息
      */
-    public static function msg(array $fields = []): Message
+    public static function error(string $msg = 'error', int $code = 500, mixed $data = null): Message
     {
-        return Message::create($fields);
+        return Message::error($msg, $code, $data);
     }
 
-    public static function code(int $code): Message
+    /**
+     * 创建自定义消息
+     */
+    public static function message(int $code = 200, string $msg = '', mixed $data = null): Message
     {
-        return Message::create()->code($code);
-    }
-
-    public static function data(array $data): Message
-    {
-        return Message::create()->data($data);
+        return Message::create($code, $msg, $data);
     }
 
     public static function result(): array
