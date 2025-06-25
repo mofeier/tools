@@ -502,28 +502,9 @@ MulanPSL-2.0
 
 - 莫斐 (zyk96321@163.com)
 
-### Crypto 加密类（传统）
-
-```php
-use mofei\Crypto;
-
-// 生成随机盐值
-$salt = Crypto::generateSalt(32);
-
-// 字符串加密/解密
-$encrypted = Crypto::encrypt('敏感数据', $salt);
-$decrypted = Crypto::decrypt($encrypted, $salt);
-
-// 哈希操作
-$hash = Crypto::hash('数据', $salt, 'sha256');
-$isValid = Crypto::verifyHash('数据', $hash, $salt);
-
-// 密码哈希（推荐用于密码存储）
-$passwordHash = Crypto::passwordHash('mypassword');
-$isCorrect = Crypto::passwordVerify('mypassword', $passwordHash);
-```
 
 ### SecureCrypto 安全加密工具（推荐）
+- 具体可查看docs文档中的用法
 
 ```php
 use mofei\SecureCrypto;
