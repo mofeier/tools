@@ -49,7 +49,6 @@ use mofei\Tools;
 use mofei\Utils;
 use mofei\StringConverter;
 use mofei\MathCalculator;
-use mofei\Crypto;
 
 // 创建消息体 - 支持多种方式
 $message = Message::success(['user_id' => 123], '操作成功')
@@ -71,10 +70,6 @@ $sum = MathCalculator::add('0.1', '0.2', 2); // "0.30"
 $result = MathCalculator::div('10', '3', 4); // "3.3333"
 $isEqual = MathCalculator::equals('0.1', '0.10'); // true
 
-// 加密功能
-$salt = Crypto::generateSalt();
-$encrypted = Crypto::encrypt('敏感数据', $salt);
-$decrypted = Crypto::decrypt($encrypted, $salt);
 
 // 工具函数
 $json = Utils::util_json_encode(['key' => 'value']);
