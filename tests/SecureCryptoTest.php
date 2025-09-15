@@ -1,8 +1,9 @@
 <?php
 
 use PHPUnit\Framework\TestCase;
-use mofei\SecureCrypto;
-use mofei\Utils;
+use Mofei\Security;
+use Mofei\Utils;
+use Mofei\SecureCrypto;
 
 class SecureCryptoTest extends TestCase
 {
@@ -15,7 +16,7 @@ class SecureCryptoTest extends TestCase
     public function testUrlSafeEncryption()
     {
         // 测试静态方法
-        $encrypted = SecureCrypto::encryptForUrl($this->testData, $this->testKey);
+        $encrypted = Security::encryptForUrl($this->testData, $this->testKey);
         $this->assertNotEmpty($encrypted);
         $this->assertNotEquals($this->testData, $encrypted);
         
@@ -24,7 +25,7 @@ class SecureCryptoTest extends TestCase
         $this->assertStringNotContainsString('/', $encrypted);
         $this->assertStringNotContainsString('=', $encrypted);
         
-        $decrypted = SecureCrypto::decryptFromUrl($encrypted, $this->testKey);
+        $decrypted = Security::decryptFromUrl($encrypted, $this->testKey);
         $this->assertEquals($this->testData, $decrypted);
         
         // 测试Utils工具方法
@@ -38,10 +39,10 @@ class SecureCryptoTest extends TestCase
      */
     public function testTokenEncryptionWithoutExpiry()
     {
-        $encrypted = SecureCrypto::encryptForToken($this->testData, $this->testKey);
+        $encrypted = Security::encryptForToken($this->testData, $this->testKey);
         $this->assertNotEmpty($encrypted);
         
-        $decrypted = SecureCrypto::decryptFromToken($encrypted, $this->testKey);
+        $decrypted = Security::decryptFromToken($encrypted, $this->testKey);
         $this->assertEquals($this->testData, $decrypted);
         
         // 测试Utils工具方法
@@ -56,8 +57,8 @@ class SecureCryptoTest extends TestCase
     public function testTokenEncryptionWithExpiry()
     {
         // 测试有效期内的Token
-        $encrypted = SecureCrypto::encryptForToken($this->testData, $this->testKey, 3600); // 1小时
-        $decrypted = SecureCrypto::decryptFromToken($encrypted, $this->testKey);
+        $encrypted = Security::encryptForToken($this->testData, $this->testKey, 3600); // 1小时
+        $decrypted = Security::decryptFromToken($encrypted, $this->testKey);
         $this->assertEquals($this->testData, $decrypted);
         
         // 测试Utils工具方法
@@ -75,12 +76,12 @@ class SecureCryptoTest extends TestCase
         $this->expectExceptionMessage('Token已过期');
         
         // 创建已过期的Token（-1秒表示1秒前过期）
-        $encrypted = SecureCrypto::encryptForToken($this->testData, $this->testKey, -1);
+        $encrypted = Security::encryptForToken($this->testData, $this->testKey, -1);
         
         // 等待确保过期
         sleep(1);
         
-        SecureCrypto::decryptFromToken($encrypted, $this->testKey);
+        Security::decryptFromToken($encrypted, $this->testKey);
     }
     
     /**

@@ -7,3 +7,10 @@
 /tests/tmp
 /tests/.phpunit.result.cache
 .trae
+.Ds_store
+*/.Ds_Store
+*/Thumbs.db
+*/ehthumbs.db
+*/.Trash-*
+*/.cursor
+*/composer.lock

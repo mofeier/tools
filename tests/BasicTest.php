@@ -6,9 +6,9 @@ use PHPUnit\Framework\TestCase;
 use mofei\Tools;
 use mofei\Message;
 use mofei\StatusCodes;
-use mofei\StringConverter;
+use mofei\StringUtils;
 use mofei\Utils;
-use mofei\MathCalculator;
+use mofei\Maths;
 use mofei\Crypto;
 
 class BasicTest extends TestCase

@@ -1,182 +1,371 @@
 <?php
 
+/**
+ * Mofeier工具包使用示例
+ * 展示各种功能的使用方法
+ */
+
+// 引入Composer自动加载文件
 require_once __DIR__ . '/../vendor/autoload.php';
 
-use Mofeier\Tools\Tools;
-use Mofeier\Tools\Message;
-use Mofeier\Tools\StringConverter;
-use Mofeier\Tools\Utils;
-use Mofeier\Tools\MathCalculator;
+// 引入Facade别名文件（如果需要使用简短别名）
+// require_once __DIR__ . '/../src/facade_aliases.php';
 
-echo "=== 通用工具包使用示例 ===\n\n";
+use Mofei\Message;
+use Mofei\StatusCodes;
+use Mofei\StringUtils;
+use Mofei\Utils;
+use Mofei\Maths;
+use Mofei\Security;
+use Mofei\Tools;
 
-// 1. 消息体使用示例
-echo "1. 消息体使用示例:\n";
-echo "-------------------\n";
+// 1. 消息体处理示例
+echo "=== 消息体处理示例 ===\n";
 
-// 基本用法
-$result1 = Tools::message()->result();
-echo "默认响应: " . json_encode($result1, JSON_UNESCAPED_UNICODE) . "\n";
+// 基本使用
+$result = Message::result();
+print_r($result);
 
-// 链式调用
-$result2 = Tools::message()->code(2002)->msg('用户不存在')->data(['id' => 123])->result();
-echo "链式调用: " . json_encode($result2, JSON_UNESCAPED_UNICODE) . "\n";
+// 设置状态码和消息
+$result = Message::code(2002)->result();
+print_r($result);
 
-// 直接实例化调用
-$message = new Message();
-$result3 = $message->code(200)->data(['name' => 'mofeier', 'age' => 25])->json();
-echo "实例调用JSON: " . $result3 . "\n";
+// 设置状态码、消息和数据
+$result = Message::code(2003)->msg('cancel')->data(['name' => 'mofeier'])->result();
+print_r($result);
 
-// 构造时传入字段
-echo "构造时设置字段: " . Message::create(['total' => 100, 'page' => 1])->code(200)->json() . "\n";
+// 添加自定义字段
+$result = Message::addFiled('times')->result();
+print_r($result);
 
-// 批量设置字段
-echo "批量设置字段: " . (new Message())->setFields(['total' => 200, 'page' => 2, 'limit' => 10])->json() . "\n";
-
-// 添加时间字段
-echo "添加时间字段: " . (new Message())->add('time')->code(2005)->msg('用户未登录')->json() . "\n";
+// 使用链式调用设置分页数据
+$result = Message::total(100)->page(1)->limit(15)->result();
+print_r($result);
 
 // 字段替换
-echo "字段替换: " . (new Message())->code(200)->replace(['code' => 'status', 'msg' => 'message'])->json() . "\n";
-
-// 静态调用
-echo "静态调用: " . Message::code(200)->data(['test' => 'static'])->json() . "\n";
-
-// 独立方法调用
-$msg = new Message();
-$msg->set('custom', 'value')->add('time');
-echo "独立方法: " . $msg->json() . "\n";
-echo "获取字段: code=" . $msg->get('code') . ", custom=" . $msg->get('custom') . "\n";
-
-// XML输出
-echo "XML输出: " . (new Message())->code(200)->data(['test' => 'value'])->xml() . "\n";
-
-// 使用Tools类简化调用
-echo "Tools简化调用: " . Tools::code(200)->data(['from' => 'tools'])->json() . "\n";
-echo "Tools直接JSON: " . Tools::json(['code' => 201, 'msg' => 'Created']) . "\n";
-
-// 添加分页字段
-$result5 = Tools::message()->add('total', 100)->add('page', 1)->add('limit', 10)
-    ->total(150)->page(2)->limit(20)->result();
-echo "分页示例: " . json_encode($result5, JSON_UNESCAPED_UNICODE) . "\n";
-
-
-
-// 自定义状态码示例
-Message::setCustomCodes([3001 => '自定义成功', 3002 => '自定义失败']);
-echo "自定义状态码: " . Message::code(3001)->json() . "\n";
-echo "检查状态码存在: " . (Message::codeExists(3001) ? '存在' : '不存在') . "\n";
+$result = Message::replaceFields(['code' => 'codes', 'msg' => 'message', 'data' => 'datas'])->result();
+print_r($result);
 
 echo "\n";
 
-// 2. 字符串转换示例
-echo "2. 字符串转换示例:\n";
-echo "-------------------\n";
+// 2. 状态码管理示例
+echo "=== 状态码管理示例 ===\n";
+
+// 获取预定义状态码消息
+$message = StatusCodes::getMessage(200);
+echo "状态码200的消息: $message\n";
+
+$message = StatusCodes::getMessage(2002);
+echo "状态码2002的消息: $message\n";
+
+// 添加自定义状态码
+StatusCodes::addCode(3001, '自定义错误');
+$message = StatusCodes::getMessage(3001);
+echo "自定义状态码3001的消息: $message\n";
+
+echo "\n";
+
+// 3. 字符串转换示例
+echo "=== 字符串转换示例 ===\n";
 
 // 基本类型转换
-echo "字符串转整数: " . Tools::str_to_int('123') . "\n";
-echo "字符串转浮点数: " . Tools::str_to_float('123.45') . "\n";
-echo "驼峰转下划线: " . Tools::str_camel_to_snake('userName') . "\n";
-echo "下划线转驼峰: " . Tools::str_snake_to_camel('user_name') . "\n";
+$intValue = StringUtils::to_int('123');
+echo "字符串'123'转整数: $intValue\n";
 
-// 数组转树形结构
-$flatArray = [
-    ['id' => 1, 'parent_id' => 0, 'name' => '根节点'],
-    ['id' => 2, 'parent_id' => 1, 'name' => '子节点1'],
-    ['id' => 3, 'parent_id' => 1, 'name' => '子节点2'],
-    ['id' => 4, 'parent_id' => 2, 'name' => '孙节点1']
-];
-$tree = Tools::str_array_to_tree($flatArray);
-echo "数组转树形: " . json_encode($tree, JSON_UNESCAPED_UNICODE) . "\n";
+$floatValue = StringUtils::to_float('123.45');
+echo "字符串'123.45'转浮点数: $floatValue\n";
 
-// 树形转数组
-$flatAgain = Tools::str_tree_to_array($tree);
-echo "树形转数组: " . json_encode($flatAgain, JSON_UNESCAPED_UNICODE) . "\n";
+$boolValue = StringUtils::to_bool('true');
+echo "字符串'true'转布尔值: " . ($boolValue ? 'true' : 'false') . "\n";
 
-echo "\n";
+$arrayValue = StringUtils::to_array('["a", "b", "c"]');
+echo "JSON字符串转数组: ";
+print_r($arrayValue);
 
-// 3. 实用工具示例
-echo "3. 实用工具示例:\n";
-echo "-------------------\n";
+// 命名转换
+$camelCase = StringUtils::to_camel_case('snake_case_string');
+echo "下划线命名转驼峰命名: $camelCase\n";
 
-// JSON操作
-$data = ['name' => '张三', 'age' => 25, 'city' => '北京'];
-$json = Tools::util_json_encode($data);
-echo "JSON编码: " . $json . "\n";
-$decoded = Tools::util_json_decode($json);
-echo "JSON解码: " . json_encode($decoded, JSON_UNESCAPED_UNICODE) . "\n";
+$snakeCase = StringUtils::to_snake_case('camelCaseString');
+echo "驼峰命名转下划线命名: $snakeCase\n";
 
-// Base64操作
-$base64 = Tools::util_base64_encode($data);
-echo "Base64编码: " . $base64 . "\n";
-$base64Decoded = Tools::util_base64_decode($base64);
-echo "Base64解码: " . json_encode($base64Decoded, JSON_UNESCAPED_UNICODE) . "\n";
+// 数组和树形结构转换
+$tree = StringUtils::array_to_tree([
+    ['id' => 1, 'parent_id' => 0, 'name' => 'Root'],
+    ['id' => 2, 'parent_id' => 1, 'name' => 'Child 1'],
+    ['id' => 3, 'parent_id' => 1, 'name' => 'Child 2'],
+    ['id' => 4, 'parent_id' => 2, 'name' => 'Grandchild 1']
+], 'id', 'parent_id', 'children');
+echo "数组转树形结构:\n";
+print_r($tree);
 
-// URL操作
-$urlData = ['name' => '张三', 'age' => 25, 'city' => '北京'];
-$urlEncoded = Tools::util_url_encode($urlData);
-echo "URL编码: " . $urlEncoded . "\n";
-$urlDecoded = Tools::util_url_decode('name=%E5%BC%A0%E4%B8%89&age=25&city=%E5%8C%97%E4%BA%AC');
-echo "URL解码: " . json_encode($urlDecoded, JSON_UNESCAPED_UNICODE) . "\n";
+$array = StringUtils::tree_to_array($tree, 'children');
+echo "树形结构转数组:\n";
+print_r($array);
 
-// 生成UUID和随机字符串
-echo "UUID: " . Tools::util_generate_uuid() . "\n";
-echo "随机字符串: " . Tools::util_generate_random_string(10) . "\n";
+// 字符串处理
+$trimmed = StringUtils::trim('  hello world  ');
+echo "去除字符串两端空格: '$trimmed'\n";
 
-// 验证功能
-echo "邮箱验证: " . (Tools::util_validate_email('test@example.com') ? '有效' : '无效') . "\n";
-echo "手机号验证: " . (Tools::util_validate_mobile('13800138000') ? '有效' : '无效') . "\n";
+$lower = StringUtils::to_lower('HELLO WORLD');
+echo "字符串转小写: $lower\n";
 
-// 文件大小格式化
-echo "文件大小格式化: " . Tools::util_format_file_size(1024 * 1024 * 2.5) . "\n";
+$upper = StringUtils::to_upper('hello world');
+echo "字符串转大写: $upper\n";
 
-// 时间格式化
-echo "时间格式化: " . Tools::util_format_time_ago(time() - 3600) . "\n";
+$ucfirst = StringUtils::ucfirst('hello world');
+echo "首字母大写: $ucfirst\n";
 
-echo "\n";
+$limited = StringUtils::limit('This is a long string', 10);
+echo "限制字符串长度: $limited\n";
 
-// 4. 数学计算示例
-echo "4. 数学计算示例:\n";
-echo "-------------------\n";
+$sanitized = StringUtils::sanitize('<script>alert("xss")</script>');
+echo "清理HTML标签: $sanitized\n";
 
-// 高精度计算
-echo "高精度加法: " . Tools::math_bcadd('0.1', '0.2', 4) . "\n";
-echo "高精度乘法: " . Tools::math_bcmul('0.1', '0.3', 4) . "\n";
-echo "高精度除法: " . Tools::math_bcdiv('1', '3', 6) . "\n";
+$random = StringUtils::random(10);
+echo "生成随机字符串: $random\n";
 
-// 基本数学运算
-echo "普通加法: " . Tools::math_add(10, 20) . "\n";
-echo "幂运算: " . Tools::math_pow(2, 8) . "\n";
-echo "平方根: " . Tools::math_sqrt(16) . "\n";
+// 字符串检查
+$contains = StringUtils::contains('hello world', 'world');
+echo "检查字符串是否包含子串: " . ($contains ? '是' : '否') . "\n";
 
-// 统计计算
-$numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
-echo "平均值: " . Tools::math_average($numbers) . "\n";
-echo "中位数: " . Tools::math_median($numbers) . "\n";
-echo "方差: " . Tools::math_variance($numbers) . "\n";
-echo "标准差: " . Tools::math_standard_deviation($numbers) . "\n";
+$startsWith = StringUtils::starts_with('hello world', 'hello');
+echo "检查字符串是否以指定子串开头: " . ($startsWith ? '是' : '否') . "\n";
 
-// 百分比计算
-echo "百分比: " . Tools::math_percentage(25, 100) . "%\n";
-
-// 阶乘
-echo "5的阶乘: " . Tools::math_factorial(5) . "\n";
-
-// 最大公约数和最小公倍数
-echo "12和18的最大公约数: " . Tools::math_gcd(12, 18) . "\n";
-echo "12和18的最小公倍数: " . Tools::math_lcm(12, 18) . "\n";
+$endsWith = StringUtils::ends_with('hello world', 'world');
+echo "检查字符串是否以指定子串结尾: " . ($endsWith ? '是' : '否') . "\n";
 
 echo "\n";
 
-// 5. 帮助信息
-echo "5. 帮助信息:\n";
-echo "-------------------\n";
-$help = Tools::help();
-echo "工具包版本: " . $help['version'] . "\n";
-echo "描述: " . $help['description'] . "\n";
-echo "可用方法数量:\n";
-foreach ($help['methods'] as $category => $methods) {
-    echo "  {$category}: " . count($methods) . " 个方法\n";
+// 4. 工具函数示例
+echo "=== 工具函数示例 ===\n";
+
+// JSON处理
+$json = Utils::json_encode(['name' => 'mofeier']);
+echo "数组转JSON: $json\n";
+
+$array = Utils::json_decode('{"name":"mofeier"}');
+echo "JSON转数组: ";
+print_r($array);
+
+// Base64处理
+$base64 = Utils::base64_encode(['name' => 'mofeier']);
+echo "数组转Base64: $base64\n";
+
+$array = Utils::base64_decode($base64);
+echo "Base64转数组: ";
+print_r($array);
+
+// URL处理
+$url = Utils::url_encode(['name' => 'mofeier', 'age' => 30]);
+echo "数组转URL参数: $url\n";
+
+$array = Utils::url_decode('name=mofeier&age=30');
+echo "URL参数转数组: ";
+print_r($array);
+
+// 加密解密
+$encrypted = Utils::encrypt_url('sensitive data');
+echo "URL安全加密: $encrypted\n";
+
+$decrypted = Utils::decrypt_url($encrypted);
+echo "URL安全解密: $decrypted\n";
+
+$token = Utils::encrypt_token('user_id:123', null, 3600); // 1小时过期
+echo "Token加密: $token\n";
+
+$decrypted = Utils::decrypt_token($token);
+echo "Token解密: $decrypted\n";
+
+// 安全功能
+$random = Utils::secure_random(32);
+echo "生成安全随机字符串: $random\n";
+
+$equals = Utils::secure_compare('known_string', 'known_string');
+echo "安全字符串比较(相同): " . ($equals ? '是' : '否') . "\n";
+
+$equals = Utils::secure_compare('known_string', 'different_string');
+echo "安全字符串比较(不同): " . ($equals ? '是' : '否') . "\n";
+
+$salt = Utils::generate_salt(32);
+echo "生成随机盐值: $salt\n";
+
+// 数组处理
+$merged = Utils::array_merge_deep(['a' => ['b' => 1]], ['a' => ['c' => 2]]);
+echo "数组深度合并: ";
+print_r($merged);
+
+$unique = Utils::array_unique_multi([
+    ['id' => 1, 'name' => 'A'],
+    ['id' => 2, 'name' => 'B'],
+    ['id' => 1, 'name' => 'A']
+], 'id');
+echo "多维数组去重: ";
+print_r($unique);
+
+$sorted = Utils::array_sort_by_key([
+    ['name' => 'C', 'age' => 30],
+    ['name' => 'A', 'age' => 25],
+    ['name' => 'B', 'age' => 35]
+], 'age');
+echo "数组按指定键排序: ";
+print_r($sorted);
+
+$grouped = Utils::array_group_by([
+    ['type' => 'A', 'name' => 'Item 1'],
+    ['type' => 'B', 'name' => 'Item 2'],
+    ['type' => 'A', 'name' => 'Item 3']
+], 'type');
+echo "数组分组: ";
+print_r($grouped);
+
+echo "\n";
+
+// 5. 数学计算示例
+echo "=== 数学计算示例 ===\n";
+
+// 基本运算（支持高精度）
+$sum = Maths::add('10.5', '20.3');
+echo "加法运算 (10.5 + 20.3): $sum\n";
+
+$difference = Maths::sub('50.0', '20.5');
+echo "减法运算 (50.0 - 20.5): $difference\n";
+
+$product = Maths::mul('10.5', '2');
+echo "乘法运算 (10.5 * 2): $product\n";
+
+$quotient = Maths::div('100', '3');
+echo "除法运算 (100 / 3): $quotient\n";
+
+// 比较
+$equals = Maths::compare('10.5', '10.50');
+echo "比较运算 (10.5 == 10.50): $equals\n";
+
+$greater = Maths::compare('10.6', '10.5');
+echo "比较运算 (10.6 > 10.5): $greater\n";
+
+$less = Maths::compare('10.4', '10.5');
+echo "比较运算 (10.4 < 10.5): $less\n";
+
+// 其他运算
+$power = Maths::pow('2', '3');
+echo "幂运算 (2^3): $power\n";
+
+$sqrt = Maths::sqrt('16');
+echo "平方根运算 (√16): $sqrt\n";
+
+$mod = Maths::mod('10', '3');
+echo "取模运算 (10 % 3): $mod\n";
+
+echo "\n";
+
+// 6. 安全加密示例
+echo "=== 安全加密示例 ===\n";
+
+// OpenSSL加密
+$encrypted = Security::openssl_encrypt('sensitive data');
+echo "OpenSSL加密: $encrypted\n";
+
+$decrypted = Security::openssl_decrypt($encrypted);
+echo "OpenSSL解密: $decrypted\n";
+
+// Sodium加密（需要安装Sodium扩展）
+if (extension_loaded('sodium')) {
+    $encrypted = Security::sodium_encrypt('sensitive data');
+    echo "Sodium加密: $encrypted\n";
+
+    $decrypted = Security::sodium_decrypt($encrypted);
+    echo "Sodium解密: $decrypted\n";
+} else {
+    echo "Sodium扩展未安装，跳过Sodium加密示例\n";
 }
 
-echo "\n=== 示例结束 ===\n";
+// 哈希
+$hash = Security::hash('password');
+echo "哈希: $hash\n";
+
+$verified = Security::verify_hash('password', $hash);
+echo "验证哈希(正确): " . ($verified ? '是' : '否') . "\n";
+
+$verified = Security::verify_hash('wrong_password', $hash);
+echo "验证哈希(错误): " . ($verified ? '是' : '否') . "\n";
+
+// 密码处理
+$hashed = Security::password_hash('password');
+echo "密码哈希: $hashed\n";
+
+$verified = Security::password_verify('password', $hashed);
+echo "验证密码哈希(正确): " . ($verified ? '是' : '否') . "\n";
+
+$verified = Security::password_verify('wrong_password', $hashed);
+echo "验证密码哈希(错误): " . ($verified ? '是' : '否') . "\n";
+
+echo "\n";
+
+// 7. Facade模式使用示例
+echo "=== Facade模式使用示例 ===\n";
+
+// 使用Facade模式进行静态调用
+// 注意：需要先引入facade_aliases.php文件才能使用简短别名
+// require_once __DIR__ . '/../src/facade_aliases.php';
+
+/*
+use Message;
+use Str;
+use Utils;
+use Math;
+use Security;
+use Status;
+
+// 消息处理
+$result = Message::code(200)->msg('success')->data(['user' => 'mofeier'])->result();
+print_r($result);
+
+// 字符串处理
+$camelCase = Str::to_camel_case('snake_case_string');
+echo "使用Facade进行字符串转换: $camelCase\n";
+
+// 工具函数
+$json = Utils::json_encode(['name' => 'mofeier']);
+echo "使用Facade进行JSON编码: $json\n";
+
+// 数学计算
+$sum = Math::add('10.5', '20.3');
+echo "使用Facade进行数学计算: $sum\n";
+
+// 安全加密
+$encrypted = Security::openssl_encrypt('sensitive data');
+echo "使用Facade进行加密: $encrypted\n";
+
+// 状态码
+$message = Status::getMessage(200);
+echo "使用Facade获取状态码消息: $message\n";
+*/
+
+echo "\n";
+
+// 8. 主工具类使用示例
+echo "=== 主工具类使用示例 ===\n";
+
+// 创建工具实例
+$tools = new Tools();
+
+// 链式调用各种方法
+$result = $tools->to_camel_case('snake_case_string')
+    ->json_encode()
+    ->encrypt_url()
+    ->result();
+echo "链式调用结果: ";
+print_r($result);
+
+// 使用lastResult作为参数
+$result = $tools->to_array('["a", "b", "c"]')
+    ->array_sort_by_key('a')
+    ->json_encode()
+    ->result();
+echo "使用lastResult作为参数的链式调用结果: ";
+print_r($result);
+
+echo "\n";
+
+echo "所有示例运行完成！\n";

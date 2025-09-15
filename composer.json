@@ -1,41 +1,30 @@
 {
-    "name": "mofeier/tools",
-    "description": "一个现代化的PHP工具库，提供消息处理、状态码管理、字符串转换、数学计算、双引擎加密功能等实用工具，特别优化URL参数和Token加密，使用PHP8.1+特性",
+    "name": "mofei/mofeier",
+    "description": "A powerful PHP toolkit for common development tasks",
     "type": "library",
-    "license": "MulanPSL-2.0",
-    "autoload": {
-        "psr-4": {
-            "mofei\\": "src/"
-        }
-    },
+    "license": "MIT",
     "authors": [
         {
-            "name": "莫斐",
-            "email": "zyk96321@163.com"
+            "name": "mofeier",
+            "email": "mofeier@example.com"
         }
     ],
-    "minimum-stability": "dev",
     "require": {
-        "php": ">=8.1",
-        "ext-bcmath": "*",
-        "ext-mbstring": "*",
-        "ext-json": "*",
-        "ext-openssl": "*"
-    },
-    "suggest": {
-        "ext-sodium": "推荐安装Sodium扩展以获得更好的加密性能和安全性"
+        "php": ">=8.1"
     },
     "require-dev": {
         "phpunit/phpunit": "^9.0"
     },
-    "autoload-dev": {
+    "autoload": {
         "psr-4": {
-            "mofei\\tests\\": "tests/"
+            "Mofei\\": "src/"
         }
     },
-    "scripts": {
-        "test": "phpunit",
-        "example": "php examples/usage.php"
+    "autoload-dev": {
+        "psr-4": {
+            "Mofei\\Tests\\": "tests/"
+        }
     },
-    "keywords": ["php", "tools", "utility", "message", "status-codes", "string-converter", "math-calculator", "crypto", "encryption", "sodium", "openssl", "url-safe", "token", "jwt", "php8.1"]
+    "minimum-stability": "dev",
+    "prefer-stable": true
 }

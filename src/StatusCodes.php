@@ -1,11 +1,11 @@
 <?php
 
-namespace mofei;
+namespace Mofei;
 
 /**
  * 状态码配置类
  * 统一管理系统状态码和对应消息
- * 使用PHP8.1+特性优化
+ * 兼容PHP 7.4+
  */
 class StatusCodes
 {
@@ -14,8 +14,8 @@ class StatusCodes
      */
     public const DEFAULT_CODES = [
         // 成功状态
-        200 => 'Success',
-        2000 => 'Success',
+        200 => '成功',
+        2000 => '成功',
         
         // 客户端错误
         2001 => '参数错误',
@@ -48,46 +48,58 @@ class StatusCodes
     /**
      * 自定义状态码映射
      */
-    private static array $customCodes = [];
+    private static $customCodes = [];
     
     /**
      * 获取状态码对应的消息
+     * 先检查自定义状态码，再检查默认状态码
      */
-    public static function getMessage(int $code): string
+    public static function getMessage($code): string
     {
-        return self::$customCodes[$code] 
-            ?? self::DEFAULT_CODES[$code] 
-            ?? 'Unknown Status';
+        $code = (int)$code;
+        
+        if (isset(self::$customCodes[$code])) {
+            return self::$customCodes[$code];
+        }
+        
+        if (isset(self::DEFAULT_CODES[$code])) {
+            return self::DEFAULT_CODES[$code];
+        }
+        
+        return 'Unknown Status';
     }
     
     /**
-     * 设置自定义状态码映射
+     * 设置自定义状态码
+     * @param array $codes 自定义状态码数组
      */
     public static function setCustomCodes(array $codes): void
     {
-        // 使用PHP8.1+的array_map优化
-        $intCodes = array_combine(
-            array_map('intval', array_keys($codes)),
-            array_values($codes)
-        );
-        self::$customCodes = [...self::$customCodes, ...$intCodes];
+        // 确保所有键都是整数
+        $intCodes = [];
+        foreach ($codes as $code => $message) {
+            $intCodes[(int)$code] = $message;
+        }
+        
+        // 直接设置，不使用array_merge避免数字键被重新索引
+        self::$customCodes = $intCodes;
     }
     
     /**
-     * 获取所有状态码
+     * 获取所有状态码（默认+自定义）
      */
     public static function getAllCodes(): array
     {
-        return [...self::DEFAULT_CODES, ...self::$customCodes];
+        return array_merge(self::DEFAULT_CODES, self::$customCodes);
     }
     
     /**
      * 检查状态码是否存在
      */
-    public static function exists(int $code): bool
+    public static function exists($code): bool
     {
-        return array_key_exists($code, self::$customCodes) 
-            || array_key_exists($code, self::DEFAULT_CODES);
+        $code = (int)$code;
+        return isset(self::$customCodes[$code]) || isset(self::DEFAULT_CODES[$code]);
     }
     
     /**
@@ -99,10 +111,13 @@ class StatusCodes
     }
     
     /**
-     * 移除指定的自定义状态码
+     * 删除自定义状态码
      */
-    public static function removeCustomCode(int $code): void
+    public static function removeCustomCode($code): void
     {
-        unset(self::$customCodes[$code]);
+        $code = (int)$code;
+        if (isset(self::$customCodes[$code])) {
+            unset(self::$customCodes[$code]);
+        }
     }
 }

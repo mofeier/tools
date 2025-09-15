@@ -1,18 +1,18 @@
 <?php
 
-namespace mofei;
+namespace Mofei;
 
 /**
  * 消息体类 统一API返回格式
  * 支持链式调用和静态调用
- * 默认字段：code, msg, data
+ * 默认字段：code, msg, time
+ * 条件显示字段：data (存在时显示)
  * 可扩展字段和自定义状态码
  * 支持数组键值对批量设置字段
- * 使用PHP8.1+特性优化
+ * 兼容PHP 7.4+
  */
 class Message
 {
-
     /**
      * 实例数据
      */
@@ -39,7 +39,12 @@ class Message
     private static float $startTime;
 
     /**
-     * 构造函数 - 使用PHP8.1+特性
+     * 全局字段映射
+     */
+    private static array $globalFieldMapping = [];
+
+    /**
+     * 构造函数 - 兼容PHP 7.4+
      */
     public function __construct(array $fields = [])
     {
@@ -50,26 +55,34 @@ class Message
         // 初始化默认字段
         $this->data = [
             'code' => 200,
-            'msg' => 'success',
-            'data' => null,
-            ...$fields // 使用数组解包操作符
+            'msg' => StatusCodes::getMessage(200),
+            'time' => number_format(microtime(true) - self::$startTime, 10)
         ];
+        
+        // 合并额外字段
+        if (!empty($fields)) {
+            $this->setFields($fields);
+        }
     }
 
     /**
      * 创建实例 - 支持多种参数形式
      */
-    public static function create(int|array $codeOrFields = [], string $msg = '', mixed $data = null): self
+    public static function create($codeOrFields = [], string $msg = '', $data = null): self
     {
         if (is_array($codeOrFields)) {
             return new self($codeOrFields);
         }
         
-        return new self([
-            'code' => $codeOrFields,
-            'msg' => $msg,
-            'data' => $data
-        ]);
+        $fields = ['code' => $codeOrFields];
+        if (!empty($msg)) {
+            $fields['msg'] = $msg;
+        }
+        if ($data !== null) {
+            $fields['data'] = $data;
+        }
+        
+        return new self($fields);
     }
 
     /**
@@ -129,6 +142,7 @@ class Message
     public function setCode(int $code): self
     {
         $this->data['code'] = $code;
+        // 自动设置对应的消息
         $this->data['msg'] = StatusCodes::getMessage($code);
         return $this;
     }
@@ -152,14 +166,14 @@ class Message
     }
 
     /**
-     * 设置多个字段 - 使用数组解包
+     * 设置多个字段
      */
     public function setFields(array $fields): self
     {
         foreach ($fields as $key => $value) {
             if ($key === 'time' || $key === 'times') {
                 $this->data[$key] = number_format(microtime(true) - self::$startTime, 10);
-                $this->extraFields[$key] = $value;
+                $this->extraFields[$key] = true;
             } else {
                 $this->data[$key] = $value;
             }
@@ -178,7 +192,7 @@ class Message
     }
 
     /**
-     * 设置字段映射（简化方法名）
+     * 设置字段映射
      */
     public function map(array $mapping): self
     {
@@ -187,23 +201,26 @@ class Message
     }
 
     /**
+     * 设置全局字段映射
+     */
+    public static function setGlobalMapping(array $mapping): void
+    {
+        self::$globalFieldMapping = $mapping;
+    }
+
+    /**
      * 替换字段名（自定义字段替换默认值）
      */
     public function replace(array $replacements): self
     {
-        $newData = [];
-        foreach ($this->data as $key => $value) {
-            $newKey = $replacements[$key] ?? $key;
-            $newData[$newKey] = $value;
-        }
-        $this->data = $newData;
+        $this->fieldMapping = array_merge($this->fieldMapping, $replacements);
         return $this;
     }
 
     /**
      * 设置输出格式为JSON
      */
-    public function json(): string
+    public function json()
     {
         $this->outputFormat = 'json';
         return $this->result();
@@ -212,7 +229,7 @@ class Message
     /**
      * 设置输出格式为XML
      */
-    public function xml(): string
+    public function xml()
     {
         $this->outputFormat = 'xml';
         return $this->result();
@@ -221,16 +238,12 @@ class Message
     /**
      * 魔术方法，支持动态字段设置和方法转发
      */
-    public function __call(string $name, array $arguments)
+    public function __call($name, $arguments)
     {
         // 处理实例调用时的方法转发
-        switch ($name) {
-            case 'code':
-                return $this->setCode(...$arguments);
-            case 'msg':
-                return $this->setMsg(...$arguments);
-            case 'data':
-                return $this->setData(...$arguments);
+        $forwardMethods = ['code', 'msg', 'data', 'setCode', 'setMsg', 'setData'];
+        if (in_array($name, $forwardMethods)) {
+            return call_user_func_array([$this, $name], $arguments);
         }
         
         // 处理动态字段设置
@@ -244,35 +257,26 @@ class Message
 
     /**
      * 静态魔术方法 - 支持所有实例方法的静态调用
+     * 确保所有方法都能正确支持静态调用
      */
-    public static function __callStatic(string $name, array $arguments)
+    public static function __callStatic($name, $arguments)
     {
-        // 对于已定义的静态方法，直接调用
-        if (method_exists(self::class, $name) && (new \ReflectionMethod(self::class, $name))->isStatic()) {
-            return self::$name(...$arguments);
-        }
-        
+        // 创建一个新的实例
         $instance = new self();
         
-        // 处理实例方法
+        // 处理实例方法调用
         if (method_exists($instance, $name)) {
-            $result = $instance->$name(...$arguments);
-            // 如果返回的是实例本身，继续返回实例以支持链式调用
-            return $result === $instance ? $result : $result;
+            $result = call_user_func_array([$instance, $name], $arguments);
+            return $result;
         }
         
-        // 处理动态字段设置
+        // 处理动态字段设置 (单个参数时视为设置字段值)
         if (count($arguments) === 1) {
             $instance->data[$name] = $arguments[0];
             return $instance;
         }
         
-        // 处理无参数的动态字段获取
-        if (count($arguments) === 0) {
-            // 返回字段值
-            return $instance->data[$name] ?? null;
-        }
-        
+        // 方法不存在时抛出异常
         throw new \BadMethodCallException("Static method {$name} not found");
     }
 
@@ -316,18 +320,25 @@ class Message
     public function result()
     {
         // 更新时间字段
-        foreach ($this->data as $key => $value) {
-            if (($key === 'time' || $key === 'times') && isset($this->extraFields[$key])) {
-                $this->data[$key] = number_format(microtime(true) - self::$startTime, 10);
-            }
+        if (isset($this->data['time']) || isset($this->data['times'])) {
+            $timeKey = isset($this->data['times']) ? 'times' : 'time';
+            $this->data[$timeKey] = number_format(microtime(true) - self::$startTime, 10);
         }
 
-        // 应用字段映射
+        // 准备结果数据
         $result = $this->data;
-        if (!empty($this->fieldMapping)) {
+        
+        // 条件显示data字段（只有当值不为null时才显示）
+        if (isset($result['data']) && $result['data'] === null) {
+            unset($result['data']);
+        }
+
+        // 应用全局字段映射和实例字段映射
+        $allMappings = array_merge(self::$globalFieldMapping, $this->fieldMapping);
+        if (!empty($allMappings)) {
             $mappedResult = [];
             foreach ($result as $key => $value) {
-                $newKey = $this->fieldMapping[$key] ?? $key;
+                $newKey = $allMappings[$key] ?? $key;
                 $mappedResult[$newKey] = $value;
             }
             $result = $mappedResult;
