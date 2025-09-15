@@ -154,7 +154,7 @@ StatusCodes::removeCustomCode(6000);
 
 ### 3. 工具函数（Utils类）
 
-提供各种实用工具方法。
+提供各种实用工具方法，所有工具函数均以`util_`开头。
 
 #### 数组操作
 
@@ -168,19 +168,19 @@ $tree = Utils::array_to_tree($data, 'id', 'parent_id', 'children');
 $array = Utils::tree_to_array($tree, 'children');
 
 // 数组深度合并
-$merged = Utils::array_merge_recursive($array1, $array2);
+$merged = Utils::util_array_merge_recursive($array1, $array2);
 
 // 获取数组指定键的值
-$value = Utils::array_get($array, 'key', 'default');
+$value = Utils::util_array_get($array, 'key', 'default');
 
 // 检查数组是否包含指定键
-$hasKeys = Utils::array_has_keys($array, ['key1', 'key2']);
+$hasKeys = Utils::util_array_has_keys($array, ['key1', 'key2']);
 
 // 移除数组中的指定键
-$filtered = Utils::array_remove_keys($array, ['key1', 'key2']);
+$filtered = Utils::util_array_remove_keys($array, ['key1', 'key2']);
 
 // 过滤数组中的空值
-$nonEmpty = Utils::array_filter_empty($array);
+$nonEmpty = Utils::util_array_filter_empty($array);
 ```
 
 #### 字符串处理
@@ -211,25 +211,25 @@ $contains = Utils::str_contains('hello world', 'o');
 
 ```php
 // JSON编码（带错误处理）
-$json = Utils::jsonEncode(['key' => 'value']);
+$json = Utils::util_json_encode(['key' => 'value']);
 
 // JSON解码（带错误处理）
-$data = Utils::jsonDecode($json);
+$data = Utils::util_json_decode($json);
 
 // 数组转换为base64字符串
-$base64 = Utils::base64_encode(['key' => 'value']);
+$base64 = Utils::util_base64_encode(['key' => 'value']);
 
 // base64字符串转换为数组
-$array = Utils::base64_decode($base64);
+$array = Utils::util_base64_decode($base64);
 
 // 数组转换为URL查询字符串
-$urlQuery = Utils::url_encode(['key' => 'value']);
+$urlQuery = Utils::util_url_encode(['key' => 'value']);
 
 // URL查询字符串转换为数组
-$array = Utils::url_decode($urlQuery);
+$array = Utils::util_url_decode($urlQuery);
 
 // 解析URL
-$parts = Utils::parse_url('https://example.com/path?query=value');
+$parts = Utils::util_parse_url('https://example.com/path?query=value');
 ```
 
 #### 加密解密工具方法
@@ -346,7 +346,7 @@ use Mofei\Facade;
 $result = Facade::message()->success(['user' => 'mofei']);
 
 // 工具类Facade
-$json = Facade::utils()->jsonEncode(['key' => 'value']);
+$json = Facade::utils()->util_json_encode(['key' => 'value']);
 
 // 数学计算Facade
 $sum = Facade::math()->add('1', '2');
@@ -385,7 +385,7 @@ $response = Facade::message()
 $result = Facade::success(['id' => 1]);
 
 // 直接调用Utils类的静态方法
-$json = Facade::jsonEncode(['key' => 'value']);
+$json = Facade::util_json_encode(['key' => 'value']);
 
 // 直接调用Maths类的静态方法
 $sum = Facade::add('1', '2');
@@ -407,7 +407,7 @@ $encrypted = Facade::encryptForUrl('敏感数据');
 │   ├── Maths.php           # 数学计算类
 │   ├── Facade.php          # 基础Facade类
 │   ├── facade_aliases.php  # Facade别名定义
-│   └── Facade/             # 门面模式实现
+│   └── Facade/             # 已移除，统一使用Facade.php
 ├── tests/                  # 测试文件
 ├── composer.json
 ├── LICENSE
@@ -420,6 +420,9 @@ $encrypted = Facade::encryptForUrl('敏感数据');
 - 方法名：采用小驼峰命名法（camelCase）
 - 常量：采用全大写+下划线（UPPER_CASE_WITH_UNDERSCORE）
 - 私有属性：以下划线开头（_privateProperty）
+- 工具函数：以`util_`开头（如`util_json_encode`）
+- 字符串处理函数：以`str_`开头（如`str_length`）
+- 数学计算函数：以`math_`开头（如`math_add`）
 
 ### 错误处理
 

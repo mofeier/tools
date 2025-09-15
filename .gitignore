@@ -15,3 +15,4 @@
 */.cursor
 */composer.lock
 phpunit.xml
+.composer.lock

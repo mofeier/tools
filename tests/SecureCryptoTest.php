@@ -3,7 +3,6 @@
 use PHPUnit\Framework\TestCase;
 use Mofei\Security;
 use Mofei\Utils;
-use Mofei\SecureCrypto;
 
 class SecureCryptoTest extends TestCase
 {
@@ -202,7 +201,7 @@ class SecureCryptoTest extends TestCase
         $this->assertTrue(Utils::util_secure_compare($string1, $string2));
         
         // 不同字符串
-        $this->assertFalse(SecureCrypto::secureCompare($string1, $string3));
+        $this->assertFalse(Security::secureCompare($string1, $string3));
         $this->assertFalse(Utils::util_secure_compare($string1, $string3));
     }
     
@@ -211,7 +210,7 @@ class SecureCryptoTest extends TestCase
      */
     public function testGetInfo()
     {
-        $crypto = new SecureCrypto($this->testKey);
+        $crypto = new Security($this->testKey);
         $info = $crypto->getInfo();
         
         $this->assertArrayHasKey('engine', $info);
@@ -231,8 +230,8 @@ class SecureCryptoTest extends TestCase
     {
         $this->expectException(Exception::class);
         
-        $encrypted = SecureCrypto::encryptForUrl($this->testData, $this->testKey);
-        SecureCrypto::decryptFromUrl($encrypted, 'wrong_key');
+        $encrypted = Security::encryptForUrl($this->testData, $this->testKey);
+        Security::decryptFromUrl($encrypted, 'wrong_key');
     }
     
     /**
@@ -242,7 +241,7 @@ class SecureCryptoTest extends TestCase
     {
         $this->expectException(Exception::class);
         
-        $crypto = new SecureCrypto($this->testKey);
+        $crypto = new Security($this->testKey);
         $crypto->decrypt('invalid_encrypted_data');
     }
     
@@ -253,8 +252,8 @@ class SecureCryptoTest extends TestCase
     {
         $largeData = str_repeat('Large data test. ', 1000); // 约18KB数据
         
-        $encrypted = SecureCrypto::encryptForUrl($largeData, $this->testKey);
-        $decrypted = SecureCrypto::decryptFromUrl($encrypted, $this->testKey);
+        $encrypted = Security::encryptForUrl($largeData, $this->testKey);
+        $decrypted = Security::decryptFromUrl($encrypted, $this->testKey);
         
         $this->assertEquals($largeData, $decrypted);
     }
@@ -266,8 +265,8 @@ class SecureCryptoTest extends TestCase
     {
         $specialData = '特殊字符测试: !@#$%^&*()_+-=[]{}|;:",./<>?`~';
         
-        $encrypted = SecureCrypto::encryptForUrl($specialData, $this->testKey);
-        $decrypted = SecureCrypto::decryptFromUrl($encrypted, $this->testKey);
+        $encrypted = Security::encryptForUrl($specialData, $this->testKey);
+        $decrypted = Security::decryptFromUrl($encrypted, $this->testKey);
         
         $this->assertEquals($specialData, $decrypted);
     }
@@ -303,15 +302,15 @@ class SecureCryptoTest extends TestCase
      */
     public function testConcurrentEncryption()
     {
-        $encrypted1 = SecureCrypto::encryptForUrl($this->testData, $this->testKey);
-        $encrypted2 = SecureCrypto::encryptForUrl($this->testData, $this->testKey);
-        
+        $encrypted1 = Security::encryptForUrl($this->testData, $this->testKey);
+        $encrypted2 = Security::encryptForUrl($this->testData, $this->testKey);
+
         // 相同数据的不同加密结果应该不同（因为使用了随机nonce/IV）
         $this->assertNotEquals($encrypted1, $encrypted2);
-        
+
         // 但解密结果应该相同
-        $decrypted1 = SecureCrypto::decryptFromUrl($encrypted1, $this->testKey);
-        $decrypted2 = SecureCrypto::decryptFromUrl($encrypted2, $this->testKey);
+        $decrypted1 = Security::decryptFromUrl($encrypted1, $this->testKey);
+        $decrypted2 = Security::decryptFromUrl($encrypted2, $this->testKey);
         
         $this->assertEquals($this->testData, $decrypted1);
         $this->assertEquals($this->testData, $decrypted2);

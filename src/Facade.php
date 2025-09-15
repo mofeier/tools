@@ -206,7 +206,7 @@ class Facade
         // 如果指定了当前类，优先调用该类的方法
         if ($this->currentClass !== null) {
             // 处理加密相关方法
-            if (Utils::str_starts_with($name, 'crypto_') && $this->currentClass === Utils::class) {
+            if (str_starts_with($name, 'crypto_') && $this->currentClass === Utils::class) {
                 $method = 'util_' . $name;
                 if (method_exists($this->currentClass, $method)) {
                     $result = $this->currentClass::$method(...$arguments);
@@ -225,18 +225,14 @@ class Facade
                 $result = $this->currentClass::$name(...$useArgs);
                 $this->lastResult = $result;
                 // 特殊处理Message类的返回值
-                if ($this->currentClass === Message::class) {
-                    return is_object($result) && $result instanceof Message ? $result : $this;
-                }
-                // 特殊处理Utils类的返回值
-                if ($this->currentClass === Utils::class) {
-                    return $result;
-                }
-                // 特殊处理Maths类的返回值
-                if ($this->currentClass === Maths::class) {
-                    return $result;
-                }
-                // 其他所有类都返回Facade实例，以支持链式调用
+            if ($this->currentClass === Message::class) {
+                return is_object($result) && $result instanceof Message ? $result : $this;
+            }
+            // 特殊处理Utils类和Maths类的返回值
+            if ($this->currentClass === Utils::class || $this->currentClass === Maths::class) {
+                return $result;
+            }
+            // 其他所有类都返回Facade实例，以支持链式调用
                 return $this;
             }
         }

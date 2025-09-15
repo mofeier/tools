@@ -115,7 +115,7 @@ class Utils
      * @return string|false JSON字符串或false
      * @throws \Exception
      */
-    public static function jsonEncode($data, int $options = JSON_UNESCAPED_UNICODE, int $depth = 512): string
+    public static function util_json_encode($data, int $options = JSON_UNESCAPED_UNICODE, int $depth = 512): string
     {
         $json = json_encode($data, $options, $depth);
         
@@ -136,7 +136,7 @@ class Utils
      * @return mixed 解码后的数据
      * @throws \Exception
      */
-    public static function jsonDecode(string $json, bool $assoc = true, int $depth = 512, int $options = 0)
+    public static function util_json_decode(string $json, bool $assoc = true, int $depth = 512, int $options = 0)
     {
         $data = json_decode($json, $assoc, $depth, $options);
         
@@ -289,9 +289,9 @@ class Utils
      * @return string base64字符串
      * @throws \Exception
      */
-    public static function base64_encode(array $data): string
+    public static function util_base64_encode(array $data): string
     {
-        $json = self::json_encode($data);
+        $json = self::util_json_encode($data);
         return base64_encode($json);
     }
 
@@ -301,13 +301,13 @@ class Utils
      * @return array 转换后的数组
      * @throws \Exception
      */
-    public static function base64_decode(string $base64): array
+    public static function util_base64_decode(string $base64): array
     {
         $json = base64_decode($base64);
         if ($json === false) {
             throw new \Exception('Invalid base64 string');
         }
-        return self::json_decode($json);
+        return self::util_json_decode($json);
     }
 
     /**
@@ -362,7 +362,7 @@ class Utils
      * @param array $data 要转换的数组
      * @return string URL查询字符串
      */
-    public static function url_encode(array $data): string
+    public static function util_url_encode(array $data): string
     {
         return http_build_query($data);
     }
@@ -372,7 +372,7 @@ class Utils
      * @param string $url URL查询字符串
      * @return array 转换后的数组
      */
-    public static function url_decode(string $url): array
+    public static function util_url_decode(string $url): array
     {
         parse_str($url, $result);
         return $result;
@@ -384,7 +384,7 @@ class Utils
      * @param int $component 要返回的URL部分
      * @return mixed 解析后的URL部分
      */
-    public static function parse_url(string $url, int $component = -1)
+    public static function util_parse_url(string $url, int $component = -1)
     {
         return parse_url($url, $component);
     }
@@ -395,11 +395,11 @@ class Utils
      * @param array $array2 第二个数组
      * @return array 合并后的数组
      */
-    public static function array_merge_recursive(array $array1, array $array2): array
+    public static function util_array_merge_recursive(array $array1, array $array2): array
     {
         foreach ($array2 as $key => $value) {
             if (isset($array1[$key]) && is_array($array1[$key]) && is_array($value)) {
-                $array1[$key] = self::array_merge_recursive($array1[$key], $value);
+                $array1[$key] = self::util_array_merge_recursive($array1[$key], $value);
             } else {
                 $array1[$key] = $value;
             }
@@ -414,7 +414,7 @@ class Utils
      * @param mixed $default 默认值
      * @return mixed 获取的值或默认值
      */
-    public static function array_get(array $array, $key, $default = null)
+    public static function util_array_get(array $array, $key, $default = null)
     {
         if (isset($array[$key])) {
             return $array[$key];
@@ -428,7 +428,7 @@ class Utils
      * @param array $keys 要检查的键数组
      * @return bool 是否全部存在
      */
-    public static function array_has_keys(array $array, array $keys): bool
+    public static function util_array_has_keys(array $array, array $keys): bool
     {
         foreach ($keys as $key) {
             if (!isset($array[$key])) {
@@ -444,7 +444,7 @@ class Utils
      * @param array $keys 要移除的键数组
      * @return array 处理后的数组
      */
-    public static function array_remove_keys(array $array, array $keys): array
+    public static function util_array_remove_keys(array $array, array $keys): array
     {
         foreach ($keys as $key) {
             if (isset($array[$key])) {
@@ -459,7 +459,7 @@ class Utils
      * @param array $array 源数组
      * @return array 过滤后的数组
      */
-    public static function array_filter_empty(array $array): array
+    public static function util_array_filter_empty(array $array): array
     {
         return array_filter($array, function($value) {
             return $value !== null && $value !== false && $value !== '' && $value !== [];
