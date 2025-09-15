@@ -232,10 +232,6 @@ class Facade
                 if ($this->currentClass === Utils::class) {
                     return $result;
                 }
-                // 特殊处理Utils类的返回值
-                if ($this->currentClass === Utils::class) {
-                    return $result;
-                }
                 // 特殊处理Maths类的返回值
                 if ($this->currentClass === Maths::class) {
                     return $result;

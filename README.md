@@ -211,10 +211,10 @@ $contains = Utils::str_contains('hello world', 'o');
 
 ```php
 // JSON编码（带错误处理）
-$json = Utils::json_encode(['key' => 'value']);
+$json = Utils::jsonEncode(['key' => 'value']);
 
 // JSON解码（带错误处理）
-$data = Utils::json_decode($json);
+$data = Utils::jsonDecode($json);
 
 // 数组转换为base64字符串
 $base64 = Utils::base64_encode(['key' => 'value']);
@@ -230,6 +230,18 @@ $array = Utils::url_decode($urlQuery);
 
 // 解析URL
 $parts = Utils::parse_url('https://example.com/path?query=value');
+```
+
+#### 加密解密工具方法
+
+```php
+// URL安全的加密方法（通过Utils调用）
+$encrypted = Utils::util_encrypt_url('要加密的数据', 'your-secret-key');
+$decrypted = Utils::util_decrypt_url($encrypted, 'your-secret-key');
+
+// Token加密方法
+$token = Utils::util_encrypt_token('用户数据', 'your-secret-key', 3600); // 有效期1小时
+$decrypted = Utils::util_decrypt_token($token, 'your-secret-key');
 ```
 
 #### 许可证生成
@@ -311,11 +323,14 @@ $quotient = Maths::div('100', '3', 2); // 33.33
 // 取模运算
 $modulus = Maths::mod('100', '7'); // 2
 
+// 幂运算
+$power = Maths::pow('2', '10', 0); // 1024
+
+// 平方根
+$sqrt = Maths::sqrt('16', 2); // 4.00
+
 // 比较数值大小
 $isGreater = Maths::comp('10.5', '10.3') > 0; // true
-
-// 四舍五入
-$rounded = Maths::round('10.567', 2); // 10.57
 ```
 
 ### 6. Facade模式使用
@@ -325,51 +340,58 @@ Facade模式提供了更简洁的调用方式，类似于Laravel和ThinkPHP的Fa
 #### 基础使用
 
 ```php
-// 加载Facade别名
-require_once 'path/to/facade_aliases.php';
+use Mofei\Facade;
 
 // 消息体Facade
-$result = Message::success(['user' => 'mofei']);
+$result = Facade::message()->success(['user' => 'mofei']);
 
 // 工具类Facade
-$json = Utils::json_encode(['key' => 'value']);
+$json = Facade::utils()->jsonEncode(['key' => 'value']);
 
 // 数学计算Facade
-$sum = Math::add('1', '2'); // 注意这里是Math而不是Maths
+$sum = Facade::math()->add('1', '2');
 
 // 安全加密Facade
-$encrypted = Crypto::encrypt('敏感数据');
+$crypto = Facade::crypto();
+$encrypted = $crypto->encrypt('敏感数据');
+$decrypted = $crypto->decrypt($encrypted);
 
 // 状态码Facade
-$msg = Status::getMessage(200);
+$msg = Facade::status()->getMessage(200);
 ```
 
 #### 链式调用与Facade
 
 ```php
 // 结合链式调用和Facade
-$response = Message::code(2001)
+$encrypted = Facade::crypto()->key('your-secret-key')->encrypt('敏感数据');
+$decrypted = Facade::crypto()->key('your-secret-key')->decrypt($encrypted);
+
+// 获取结果
+$encryptedStr = Facade::getResult();
+
+// 使用链式调用创建响应
+$response = Facade::message()
+    ->code(2001)
     ->msg('参数错误')
     ->data(['field' => 'missing'])
-    ->json();
+    ->result();
 ```
 
-### 7. 链式调用和静态调用
-
-所有工具类都支持链式调用和静态调用方式。
+#### 静态方法直接调用
 
 ```php
-// 链式调用示例
-$result = Message::code(2001)
-    ->msg('参数错误')
-    ->add('details', '缺少必要参数')
-    ->map(['code' => 'status'])
-    ->json();
+// 直接调用Message类的静态方法
+$result = Facade::success(['id' => 1]);
 
-// 静态调用示例
-$result = Utils::json_encode(
-    Utils::array_to_tree($data)
-);
+// 直接调用Utils类的静态方法
+$json = Facade::jsonEncode(['key' => 'value']);
+
+// 直接调用Maths类的静态方法
+$sum = Facade::add('1', '2');
+
+// 直接调用Security类的静态方法
+$encrypted = Facade::encryptForUrl('敏感数据');
 ```
 
 ## 架构设计
@@ -386,11 +408,7 @@ $result = Utils::json_encode(
 │   ├── Facade.php          # 基础Facade类
 │   ├── facade_aliases.php  # Facade别名定义
 │   └── Facade/             # 门面模式实现
-│       ├── MessageFacade.php
-│       ├── UtilsFacade.php
-│       └── MathsFacade.php
 ├── tests/                  # 测试文件
-│   └── test_all.php        # 全面功能测试
 ├── composer.json
 ├── LICENSE
 └── README.md
@@ -409,10 +427,10 @@ $result = Utils::json_encode(
 
 ## 测试
 
-运行内置的全面测试脚本：
+运行测试：
 
 ```bash
-php tests/test_all.php
+php tests/facade_test.php
 ```
 
 ## 贡献

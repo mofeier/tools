@@ -14,3 +14,4 @@
 */.Trash-*
 */.cursor
 */composer.lock
+phpunit.xml

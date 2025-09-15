@@ -115,7 +115,7 @@ class Utils
      * @return string|false JSON字符串或false
      * @throws \Exception
      */
-    public static function json_encode($data, int $options = JSON_UNESCAPED_UNICODE, int $depth = 512): string
+    public static function jsonEncode($data, int $options = JSON_UNESCAPED_UNICODE, int $depth = 512): string
     {
         $json = json_encode($data, $options, $depth);
         
@@ -136,7 +136,7 @@ class Utils
      * @return mixed 解码后的数据
      * @throws \Exception
      */
-    public static function json_decode(string $json, bool $assoc = true, int $depth = 512, int $options = 0)
+    public static function jsonDecode(string $json, bool $assoc = true, int $depth = 512, int $options = 0)
     {
         $data = json_decode($json, $assoc, $depth, $options);
         
@@ -308,6 +308,53 @@ class Utils
             throw new \Exception('Invalid base64 string');
         }
         return self::json_decode($json);
+    }
+
+    /**
+     * URL安全的加密方法
+     * @param string $data 要加密的数据
+     * @param string|null $key 加密密钥
+     * @return string 加密后的字符串
+     */
+    public static function util_encrypt_url(string $data, ?string $key = null): string
+    {
+        return Security::encryptForUrl($data, $key);
+    }
+
+    /**
+     * URL安全的解密方法
+     * @param string $encrypted 加密后的字符串
+     * @param string|null $key 解密密钥
+     * @return string 解密后的数据
+     * @throws \Exception
+     */
+    public static function util_decrypt_url(string $encrypted, ?string $key = null): string
+    {
+        return Security::decryptFromUrl($encrypted, $key);
+    }
+
+    /**
+     * Token加密方法
+     * @param string $data 要加密的数据
+     * @param string|null $key 加密密钥
+     * @param int $expiry 过期时间（秒），0表示不过期
+     * @return string 加密后的Token
+     */
+    public static function util_encrypt_token(string $data, ?string $key = null, int $expiry = 0): string
+    {
+        return Security::encryptForToken($data, $key, $expiry);
+    }
+
+    /**
+     * Token解密方法
+     * @param string $encrypted 加密后的Token
+     * @param string|null $key 解密密钥
+     * @return string 解密后的数据
+     * @throws \Exception
+     */
+    public static function util_decrypt_token(string $encrypted, ?string $key = null): string
+    {
+        return Security::decryptFromToken($encrypted, $key);
     }
 
     /**
