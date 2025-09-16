@@ -5,8 +5,7 @@ namespace Mofei;
 /**
  * 数学计算工具类
  * 提供高精度数学计算功能，避免浮点数精度问题
- * 兼容PHP 7.4+
- */
+ * 兼容PHP 7.4+ */
 class Maths
 {
     /**
@@ -222,5 +221,124 @@ class Maths
             return $max;
         }
         return $num;
+    }
+    
+    /**
+     * 计算数组元素的中位数
+     * @param array $numbers 数值数组
+     * @param int $scale 小数位数，默认为2
+     * @return string
+     */
+    public static function median(array $numbers, int $scale = 2): string
+    {
+        if (empty($numbers)) {
+            return '0';
+        }
+        
+        // 转换为字符串并排序
+        $sortedNumbers = array_map('strval', $numbers);
+        sort($sortedNumbers, SORT_NUMERIC);
+        
+        $count = count($sortedNumbers);
+        $middle = floor($count / 2);
+        
+        // 如果数组长度为奇数，返回中间元素
+        if ($count % 2 === 1) {
+            return $sortedNumbers[$middle];
+        }
+        
+        // 如果数组长度为偶数，返回中间两个元素的平均值
+        $lower = $sortedNumbers[$middle - 1];
+        $upper = $sortedNumbers[$middle];
+        $sum = bcadd($lower, $upper, $scale);
+        return bcdiv($sum, '2', $scale);
+    }
+
+    /**
+     * 计算百分比
+     * @param string|int|float $part 部分值
+     * @param string|int|float $total 总值
+     * @param int $scale 小数位数，默认为2
+     * @return string 百分比结果（如25.00表示25%）
+     */
+    public static function percentage($part, $total, int $scale = 2): string
+    {
+        $part = (string)$part;
+        $total = (string)$total;
+        
+        // 避免除以0
+        if (bccomp($total, '0', 10) === 0) {
+            return '0.00';
+        }
+        
+        // 计算百分比：(part / total) * 100
+        $result = bcmul(bcdiv($part, $total, $scale + 2), '100', $scale);
+        return $result;
+    }
+    
+    /**
+     * 计算阶乘
+     * @param int $n 非负整数
+     * @return string 阶乘结果
+     */
+    public static function factorial(int $n): string
+    {
+        // 确保n为非负整数
+        $n = max(0, (int)$n);
+        
+        // 阶乘基本情况
+        if ($n <= 1) {
+            return '1';
+        }
+        
+        // 计算阶乘
+        $result = '1';
+        for ($i = 2; $i <= $n; $i++) {
+            $result = bcmul($result, (string)$i, 0);
+        }
+        
+        return $result;
+    }
+    
+    /**
+     * 计算最大公约数
+     * @param int $a 第一个数
+     * @param int $b 第二个数
+     * @return string 最大公约数
+     */
+    public static function gcd(int $a, int $b): string
+    {
+        // 确保输入为整数
+        $a = (string)abs($a);
+        $b = (string)abs($b);
+        
+        // 欧几里得算法求最大公约数
+        while (bccomp($b, '0', 0) !== 0) {
+            $temp = $b;
+            $b = bcmod($a, $b);
+            $a = $temp;
+        }
+        
+        return $a;
+    }
+    
+    /**
+     * 计算最小公倍数
+     * @param int $a 第一个数
+     * @param int $b 第二个数
+     * @return string 最小公倍数
+     */
+    public static function lcm(int $a, int $b): string
+    {
+        // 确保输入为整数
+        $a = (string)abs($a);
+        $b = (string)abs($b);
+        
+        // 最小公倍数 = (a*b)/最大公约数
+        if (bccomp($a, '0', 0) === 0 || bccomp($b, '0', 0) === 0) {
+            return '0';
+        }
+        
+        return bcdiv(bcmul($a, $b, 0), self::gcd((int)$a, (int)$b), 0);
     }
 }

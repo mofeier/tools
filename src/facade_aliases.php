@@ -7,20 +7,13 @@
 
 // 定义Facade类的别名映射
 $aliases = [
-    // 消息类Facade
-    'Message' => 'Mofei\Facade\MessageFacade',
-    
-    // 工具类Facade
-    'Utils' => 'Mofei\Facade\UtilsFacade',
-    
-    // 数学计算类Facade
-    'Math' => 'Mofei\Facade\MathsFacade',
-    
-    // 安全加密类Facade
-    'Security' => 'Mofei\Facade\SecurityFacade',
-    
-    // 状态码类Facade
-    'Status' => 'Mofei\Facade\StatusCodesFacade',
+    // 主要Facade类
+    'Facade' => 'Mofei\Facade',
+    'Message' => 'Mofei\Message',
+    'Utils' => 'Mofei\Utils',
+    'Maths' => 'Mofei\Maths',
+    'Security' => 'Mofei\Security',
+    'StatusCodes' => 'Mofei\StatusCodes',
 ];
 
 // 注册别名

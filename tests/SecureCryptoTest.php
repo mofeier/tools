@@ -1,8 +1,11 @@
 <?php
 
+namespace Mofei\Tests;
+
 use PHPUnit\Framework\TestCase;
 use Mofei\Security;
 use Mofei\Utils;
+use Exception;
 
 class SecureCryptoTest extends TestCase
 {
@@ -90,10 +93,10 @@ class SecureCryptoTest extends TestCase
     {
         // 测试Sodium引擎
         if (extension_loaded('sodium')) {
-            $sodiumCrypto = new SecureCrypto(
+            $sodiumCrypto = new Security(
                 $this->testKey,
-                SecureCrypto::ENGINE_SODIUM,
-                SecureCrypto::MODE_STANDARD
+                Security::ENGINE_SODIUM,
+                Security::MODE_STANDARD
             );
             
             $encrypted = $sodiumCrypto->encrypt($this->testData);
@@ -103,10 +106,10 @@ class SecureCryptoTest extends TestCase
         
         // 测试OpenSSL引擎
         if (extension_loaded('openssl')) {
-            $opensslCrypto = new SecureCrypto(
+            $opensslCrypto = new Security(
                 $this->testKey,
-                SecureCrypto::ENGINE_OPENSSL,
-                SecureCrypto::MODE_STANDARD
+                Security::ENGINE_OPENSSL,
+                Security::MODE_STANDARD
             );
             
             $encrypted = $opensslCrypto->encrypt($this->testData);
@@ -121,13 +124,13 @@ class SecureCryptoTest extends TestCase
     public function testDifferentModes()
     {
         $modes = [
-            SecureCrypto::MODE_STANDARD,
-            SecureCrypto::MODE_URL_SAFE,
-            SecureCrypto::MODE_COMPACT
+            Security::MODE_STANDARD,
+            Security::MODE_URL_SAFE,
+            Security::MODE_COMPACT
         ];
         
         foreach ($modes as $mode) {
-            $crypto = new SecureCrypto($this->testKey, SecureCrypto::ENGINE_AUTO, $mode);
+            $crypto = new Security($this->testKey, Security::ENGINE_AUTO, $mode);
             
             $encrypted = $crypto->encrypt($this->testData);
             $this->assertNotEmpty($encrypted);
@@ -136,10 +139,10 @@ class SecureCryptoTest extends TestCase
             $this->assertEquals($this->testData, $decrypted);
             
             // 验证不同模式的编码格式
-            if ($mode === SecureCrypto::MODE_URL_SAFE) {
+            if ($mode === Security::MODE_URL_SAFE) {
                 $this->assertStringNotContainsString('+', $encrypted);
                 $this->assertStringNotContainsString('/', $encrypted);
-            } elseif ($mode === SecureCrypto::MODE_COMPACT) {
+            } elseif ($mode === Security::MODE_COMPACT) {
                 $this->assertMatchesRegularExpression('/^[0-9a-f]+$/', $encrypted);
             }
         }
@@ -150,7 +153,7 @@ class SecureCryptoTest extends TestCase
      */
     public function testAutoEngine()
     {
-        $crypto = new SecureCrypto($this->testKey, SecureCrypto::ENGINE_AUTO);
+        $crypto = new Security($this->testKey, Security::ENGINE_AUTO);
         
         $encrypted = $crypto->encrypt($this->testData);
         $decrypted = $crypto->decrypt($encrypted);
@@ -158,7 +161,7 @@ class SecureCryptoTest extends TestCase
         
         $info = $crypto->getInfo();
         $this->assertArrayHasKey('engine', $info);
-        $this->assertContains($info['engine'], [SecureCrypto::ENGINE_SODIUM, SecureCrypto::ENGINE_OPENSSL]);
+        $this->assertContains($info['engine'], [Security::ENGINE_SODIUM, Security::ENGINE_OPENSSL]);
     }
     
     /**
@@ -167,17 +170,17 @@ class SecureCryptoTest extends TestCase
     public function testSecureRandomGeneration()
     {
         // 测试默认长度
-        $random1 = SecureCrypto::generateSecureRandom();
-        $random2 = SecureCrypto::generateSecureRandom();
+        $random1 = Security::generateSecureRandom();
+        $random2 = Security::generateSecureRandom();
         $this->assertNotEquals($random1, $random2);
         $this->assertEquals(64, strlen($random1)); // 32字节 = 64个十六进制字符
         
         // 测试自定义长度
-        $random3 = SecureCrypto::generateSecureRandom(16);
+        $random3 = Security::generateSecureRandom(16);
         $this->assertEquals(32, strlen($random3)); // 16字节 = 32个十六进制字符
         
         // 测试URL安全模式
-        $random4 = SecureCrypto::generateSecureRandom(32, true);
+        $random4 = Security::generateSecureRandom(32, true);
         $this->assertStringNotContainsString('+', $random4);
         $this->assertStringNotContainsString('/', $random4);
         $this->assertStringNotContainsString('=', $random4);
@@ -197,7 +200,7 @@ class SecureCryptoTest extends TestCase
         $string3 = 'test_string_456';
         
         // 相同字符串
-        $this->assertTrue(SecureCrypto::secureCompare($string1, $string2));
+        $this->assertTrue(Security::secureCompare($string1, $string2));
         $this->assertTrue(Utils::util_secure_compare($string1, $string2));
         
         // 不同字符串

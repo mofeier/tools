@@ -238,8 +238,8 @@ class Security
             $result = strtr($result, '+/', '-_');
             $result = rtrim($result, '=');
         } elseif ($this->mode === self::MODE_COMPACT) {
-            $result = strtr($result, '+/', '-_');
-            $result = rtrim($result, '=');
+            // 转换为十六进制字符串，去除非十六进制字符
+            $result = bin2hex(base64_decode($result));
         }
 
         return $result;
@@ -254,12 +254,21 @@ class Security
     private function decryptWithSodium(string $encrypted): string
     {
         // 根据模式进行预处理
-        if ($this->mode === self::MODE_URL_SAFE || $this->mode === self::MODE_COMPACT) {
+        if ($this->mode === self::MODE_URL_SAFE) {
             $encrypted = str_pad(strtr($encrypted, '-_', '+/'), strlen($encrypted) % 4, '=', STR_PAD_RIGHT);
+        } elseif ($this->mode === self::MODE_COMPACT) {
+            // 对于紧凑型，先将十六进制转回二进制
+            $encrypted = hex2bin($encrypted);
+        }
+
+        // 对于URL_SAFE和STANDARD模式，需要base64解码
+        if ($this->mode !== self::MODE_COMPACT) {
+            $data = base64_decode($encrypted);
+        } else {
+            $data = $encrypted;
         }
 
         $key = hash('sha256', $this->key, true); // 确保密钥长度为32字节
-        $data = base64_decode($encrypted);
         $nonceLength = SODIUM_CRYPTO_AEAD_AES256GCM_NPUBBYTES;
 
         if (strlen($data) < $nonceLength) {
@@ -304,8 +313,8 @@ class Security
             $result = strtr($result, '+/', '-_');
             $result = rtrim($result, '=');
         } elseif ($this->mode === self::MODE_COMPACT) {
-            $result = strtr($result, '+/', '-_');
-            $result = rtrim($result, '=');
+            // 转换为十六进制字符串，去除非十六进制字符
+            $result = bin2hex(base64_decode($result));
         }
 
         return $result;
@@ -320,12 +329,19 @@ class Security
     private function decryptWithOpenSSL(string $encrypted): string
     {
         // 根据模式进行预处理
-        if ($this->mode === self::MODE_URL_SAFE || $this->mode === self::MODE_COMPACT) {
+        if ($this->mode === self::MODE_URL_SAFE) {
             $encrypted = str_pad(strtr($encrypted, '-_', '+/'), strlen($encrypted) % 4, '=', STR_PAD_RIGHT);
+        } elseif ($this->mode === self::MODE_COMPACT) {
+            // 对于紧凑型，先将十六进制转回二进制
+            $data = hex2bin($encrypted);
         }
 
-        $key = hash('sha256', $this->key, true); // 确保密钥长度正确
-        $data = base64_decode($encrypted);
+        // 对于URL_SAFE和STANDARD模式，需要base64解码
+        if ($this->mode !== self::MODE_COMPACT) {
+            $key = hash('sha256', $this->key, true); // 确保密钥长度正确
+            $data = base64_decode($encrypted);
+        }
+
         $ivLength = openssl_cipher_iv_length(self::DEFAULT_ALGORITHM);
         $tagLength = 16; // GCM标签长度
 
@@ -337,6 +353,7 @@ class Security
         $tag = substr($data, $ivLength, $tagLength);
         $ciphertext = substr($data, $ivLength + $tagLength);
 
+        $key = hash('sha256', $this->key, true); // 确保密钥长度正确
         $decrypted = openssl_decrypt($ciphertext, self::DEFAULT_ALGORITHM, $key, OPENSSL_RAW_DATA, $iv, $tag);
 
         if ($decrypted === false) {
@@ -435,17 +452,21 @@ class Security
      *
      * @param mixed $data 要加密的数据
      * @param int $exp 过期时间（秒），0表示永不过期
+     * @param int|null $currentTime 用于测试的当前时间（可选）
      * @return string 加密后的字符串
      */
-    public static function encryptWithExpiry($data, int $exp = 0): string
+    public static function encryptWithExpiry($data, int $exp = 0, ?int $currentTime = null): string
     {
         $key = self::getDefaultKey();
         $crypto = new self($key, self::ENGINE_AUTO, self::MODE_URL_SAFE);
         
+        // 使用传入的当前时间或实际当前时间
+        $time = $currentTime ?? time();
+        
         // 构建包含过期时间的数据
         $payload = json_encode([
             'data' => $data,
-            'exp' => $exp > 0 ? time() + $exp : 0
+            'exp' => $exp > 0 ? $time + $exp : 0
         ]);
         
         return $crypto->encrypt($payload);
@@ -465,9 +486,19 @@ class Security
         $data = $crypto->decrypt($encrypted);
         $json = json_decode($data, true);
 
+        // 检查JSON解码是否成功
+        if ($json === null) {
+            throw new \Exception('Invalid token format');
+        }
+
         // 检查是否过期，exp为0表示永不过期
         if (isset($json['exp']) && $json['exp'] > 0 && time() > $json['exp']) {
-            throw new \Exception('Token has expired');
+            throw new \Exception('Token已过期');
+        }
+
+        // 检查data字段是否存在
+        if (!isset($json['data'])) {
+            throw new \Exception('Missing data in token');
         }
 
         return $json['data'];
@@ -505,16 +536,24 @@ class Security
      * 
      * @param string $data 要加密的数据
      * @param string|null $key 加密密钥
-     * @param int $expiry 过期时间（秒），0表示不过期
+     * @param int $expiry 过期时间（秒），0表示不过期，负数表示已过期
+     * @param int|null $currentTime 用于测试的当前时间（可选）
      * @return string 加密后的Token
      */
-    public static function encryptForToken(string $data, ?string $key = null, int $expiry = 0): string
+    public static function encryptForToken(string $data, ?string $key = null, int $expiry = 0, ?int $currentTime = null): string
     {
-        $timestamp = time();
+        $timestamp = $currentTime ?? time();
+        // 处理过期时间：如果为负数，则表示已过期
+        if ($expiry < 0) {
+            $exp = $timestamp + $expiry; // 负数的expiry会使exp小于当前时间
+        } else {
+            $exp = $expiry > 0 ? $timestamp + $expiry : 0;
+        }
+        
         $payload = [
             'data' => $data,
             'timestamp' => $timestamp,
-            'exp' => $expiry > 0 ? $timestamp + $expiry : 0
+            'exp' => $exp
         ];
 
         $jsonData = json_encode($payload);
@@ -534,10 +573,20 @@ class Security
         $crypto = new self($key ?? self::getDefaultKey(), self::ENGINE_AUTO, self::MODE_URL_SAFE);
         $data = $crypto->decrypt($encrypted);
         $json = json_decode($data, true);
+        
+        // 验证JSON解析
+        if ($json === null) {
+            throw new \Exception('Invalid token format');
+        }
+        
+        // 验证数据字段存在
+        if (!isset($json['data'])) {
+            throw new \Exception('Missing data in token');
+        }
 
         // 检查是否过期，exp为0表示永不过期
         if (isset($json['exp']) && $json['exp'] > 0 && time() > $json['exp']) {
-            throw new \Exception('Token has expired');
+            throw new \Exception('Token已过期');
         }
 
         return $json['data'];

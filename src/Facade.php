@@ -139,7 +139,12 @@ class Facade
                 return $result;
             }
             
-            $prefixedMethod = $prefix === 'crypto' ? 'util_' . $name : ($prefix !== 'message' ? $prefix . '_' . $name : $name);
+            // 特殊处理字符串转换方法
+            if ($prefix === 'utils' && strpos($name, 'to_camel') === 0) {
+                $prefixedMethod = 'str_snake_to_camel';
+            } else {
+                $prefixedMethod = $prefix === 'crypto' ? 'util_' . $name : ($prefix !== 'message' ? $prefix . '_' . $name : $name);
+            }
             
             if (method_exists($className, $prefixedMethod)) {
                 $result = $className::$prefixedMethod(...$arguments);
@@ -225,14 +230,14 @@ class Facade
                 $result = $this->currentClass::$name(...$useArgs);
                 $this->lastResult = $result;
                 // 特殊处理Message类的返回值
-            if ($this->currentClass === Message::class) {
-                return is_object($result) && $result instanceof Message ? $result : $this;
-            }
-            // 特殊处理Utils类和Maths类的返回值
-            if ($this->currentClass === Utils::class || $this->currentClass === Maths::class) {
-                return $result;
-            }
-            // 其他所有类都返回Facade实例，以支持链式调用
+                if ($this->currentClass === Message::class) {
+                    return is_object($result) && $result instanceof Message ? $result : $this;
+                }
+                // 特殊处理Utils类和Maths类的返回值
+                if ($this->currentClass === Utils::class || $this->currentClass === Maths::class) {
+                    return $result;
+                }
+                // 其他所有类都返回Facade实例，以支持链式调用
                 return $this;
             }
         }

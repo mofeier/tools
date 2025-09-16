@@ -90,7 +90,7 @@ class StatusCodes
      */
     public static function getAllCodes(): array
     {
-        return array_merge(self::DEFAULT_CODES, self::$customCodes);
+        return self::DEFAULT_CODES + self::$customCodes;
     }
     
     /**

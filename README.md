@@ -18,7 +18,7 @@
 
 ## 系统要求
 
-- PHP 8.1+
+- PHP 7.4+
 - Mbstring扩展（多字节字符串处理）
 - JSON扩展
 - OpenSSL扩展（加密功能）
@@ -442,4 +442,4 @@ php tests/facade_test.php
 
 ## 许可证
 
-本项目采用 MIT 开源许可证。
+本项目采用 Apache 2.0开源许可证。

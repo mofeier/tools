@@ -161,11 +161,23 @@ class Tools
         }
 
         // 字符串转换相关方法
-        if ((Utils::str_starts_with($name, 'str_') || Utils::str_starts_with($name, 'to') || Utils::str_ends_with($name, 'Case')) && method_exists(Utils::class, $name)) {
-            $result = Utils::$name(...$arguments);
-            // 保存结果到lastResult
-            self::getInstance()->lastResult = $result;
-            return $result;
+        if ((Utils::str_starts_with($name, 'str_') || Utils::str_starts_with($name, 'to') || Utils::str_ends_with($name, 'Case'))) {
+            if (method_exists(Utils::class, $name)) {
+                $result = Utils::$name(...$arguments);
+                // 保存结果到lastResult
+                self::getInstance()->lastResult = $result;
+                return $result;
+            }
+            // 对于str_array_to_tree等方法，去掉str_前缀
+            if (Utils::str_starts_with($name, 'str_')) {
+                $methodName = substr($name, 4);
+                if (method_exists(Utils::class, $methodName)) {
+                    $result = Utils::$methodName(...$arguments);
+                    // 保存结果到lastResult
+                    self::getInstance()->lastResult = $result;
+                    return $result;
+                }
+            }
         }
 
         // 工具函数相关方法
@@ -177,11 +189,28 @@ class Tools
         }
 
         // 数学计算相关方法
-        if (str_starts_with($name, 'math_') && method_exists(Maths::class, $name)) {
-            $result = Maths::$name(...$arguments);
-            // 保存结果到lastResult
-            self::getInstance()->lastResult = $result;
-            return $result;
+        if (str_starts_with($name, 'math_')) {
+            // 移除math_前缀
+            $methodName = substr($name, 5);
+            
+            // 特殊处理带bc前缀的方法，例如math_bcadd映射到add
+            if (str_starts_with($methodName, 'bc')) {
+                $bcMethodName = substr($methodName, 2);
+                if (method_exists(Maths::class, $bcMethodName)) {
+                    $result = Maths::$bcMethodName(...$arguments);
+                    // 保存结果到lastResult
+                    self::getInstance()->lastResult = $result;
+                    return $result;
+                }
+            }
+            
+            // 普通方法映射
+            if (method_exists(Maths::class, $methodName)) {
+                $result = Maths::$methodName(...$arguments);
+                // 保存结果到lastResult
+                self::getInstance()->lastResult = $result;
+                return $result;
+            }
         }
 
         // 加密相关方法
@@ -337,8 +366,13 @@ class Tools
         // 获取数学方法
         $mathMethods = get_class_methods(Maths::class);
         foreach ($mathMethods as $method) {
-            if (str_starts_with($method, 'math_')) {
-                $methods['math'][] = $method;
+            if (!str_starts_with($method, '__')) {
+                // 特殊处理bc前缀方法
+                if (str_starts_with($method, 'bc')) {
+                    $methods['math'][] = 'math_' . $method;
+                } else {
+                    $methods['math'][] = 'math_' . $method;
+                }
             }
         }
 

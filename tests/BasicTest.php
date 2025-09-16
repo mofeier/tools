@@ -1,15 +1,14 @@
 <?php
 
-namespace mofei\Tests;
+namespace Mofei\Tests;
 
 use PHPUnit\Framework\TestCase;
-use mofei\Tools;
-use mofei\Message;
-use mofei\StatusCodes;
-use mofei\StringUtils;
-use mofei\Utils;
-use mofei\Maths;
-use mofei\Crypto;
+use Mofei\Tools;
+use Mofei\Message;
+use Mofei\StatusCodes;
+use Mofei\Utils;
+use Mofei\Maths;
+use Mofei\Security;
 
 class BasicTest extends TestCase
 {
@@ -20,7 +19,7 @@ class BasicTest extends TestCase
         
         $this->assertIsArray($result);
         $this->assertEquals(2000, $result['code']);
-        $this->assertEquals('Success', $result['msg']);
+        $this->assertEquals('成功', $result['msg']);
         $this->assertIsArray($result['data']);
     }
 

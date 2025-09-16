@@ -54,9 +54,10 @@ class Message
         
         // 初始化默认字段
         $this->data = [
-            'code' => 200,
-            'msg' => StatusCodes::getMessage(200),
-            'time' => number_format(microtime(true) - self::$startTime, 10)
+            'code' => 2000,
+            'msg' => StatusCodes::getMessage(2000),
+            'time' => number_format(microtime(true) - self::$startTime, 10),
+            'data' => []
         ];
         
         // 合并额外字段

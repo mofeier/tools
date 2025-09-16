@@ -1,20 +1,20 @@
-{
-    "name": "mofei/mofeier",
-    "description": "A powerful PHP toolkit for common development tasks",
-    "type": "library",
-    "license": "Apache License 2.0",
-    "authors": [
-        {
-            "name": "mofeier",
-            "email": "mofeier@example.com"
-        }
-    ],
-    "version": "2.1.1",
+{   
+    "name": "mofei/tools",    
+    "description": "A powerful PHP toolkit for common development tasks",    
+    "type": "library",    
+    "license": "Apache License 2.0",    
+    "authors": [        
+            {            
+            "name": "莫斐",            
+            "email": "zyk96321@163.com"        
+            }    
+        ],    
+    "version": "2.1.2",
     "require": {
-        "php": ">=8.1"
+        "php": ">=7.4.0"
     },
     "require-dev": {
-        "phpunit/phpunit": "^9.0"
+        "phpunit/phpunit": "^12.0"
     },
     "autoload": {
         "psr-4": {

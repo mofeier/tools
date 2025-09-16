@@ -46,6 +46,133 @@ class Utils
         
         return strtoupper($license);
     }
+    
+    /**
+     * 字符串转换函数 - 转整数
+     */
+    public static function str_to_int(string $string, int $default = 0): int
+    {
+        return intval($string) === 0 && $string !== '0' ? $default : intval($string);
+    }
+    
+    /**
+     * 字符串转换函数 - 转浮点数
+     */
+    public static function str_to_float(string $string, float $default = 0.0): float
+    {
+        return floatval($string) === 0.0 && $string !== '0' && $string !== '0.0' ? $default : floatval($string);
+    }
+    
+    /**
+     * 字符串转换函数 - 转布尔值
+     */
+    public static function str_to_bool(string $string, bool $default = false): bool
+    {
+        $lower = strtolower($string);
+        $truthy = ['true', 'yes', '1', 'on', 'y', 't'];
+        $falsy = ['false', 'no', '0', 'off', 'n', 'f'];
+        
+        if (in_array($lower, $truthy)) {
+            return true;
+        }
+        if (in_array($lower, $falsy)) {
+            return false;
+        }
+        return $default;
+    }
+    
+    /**
+     * 驼峰命名转下划线命名
+     */
+    public static function str_camel_to_snake(string $string): string
+    {
+        return ltrim(strtolower(preg_replace('/[A-Z]/', '_$0', $string)), '_');
+    }
+    
+    /**
+     * to_snake_case方法 - 作为str_camel_to_snake的别名，便于Facade调用
+     */
+    public static function to_snake_case(string $string): string
+    {
+        return self::str_camel_to_snake($string);
+    }
+    
+    /**
+     * 下划线命名转驼峰命名
+     */
+    public static function str_snake_to_camel(string $string, bool $capitalizeFirst = false): string
+    {
+        $string = str_replace('_', '', ucwords($string, '_'));
+        if (!$capitalizeFirst) {
+            $string = lcfirst($string);
+        }
+        return $string;
+    }
+    
+    /**
+     * to_camel_case方法 - 作为str_snake_to_camel的别名，便于Facade调用
+     */
+    public static function to_camel_case(string $string, bool $capitalizeFirst = false): string
+    {
+        return self::str_snake_to_camel($string, $capitalizeFirst);
+    }
+    
+    /**
+     * 生成UUID
+     */
+    public static function util_generate_uuid(): string
+    {
+        if (function_exists('uuid_create') && function_exists('uuid_is_valid')) {
+            $uuid = uuid_create(UUID_TYPE_RANDOM);
+            return $uuid;
+        } else {
+            // 兼容方式生成UUID
+            return sprintf('%04x%04x-%04x-%04x-%04x-%04x%04x%04x',
+                mt_rand(0, 0xffff), mt_rand(0, 0xffff),
+                mt_rand(0, 0xffff),
+                mt_rand(0, 0x0fff) | 0x4000,
+                mt_rand(0, 0x3fff) | 0x8000,
+                mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0xffff)
+            );
+        }
+    }
+    
+    /**
+     * 验证邮箱格式
+     */
+    public static function util_validate_email(string $email): bool
+    {
+        return filter_var($email, FILTER_VALIDATE_EMAIL) !== false;
+    }
+    
+    /**
+     * 验证手机号格式
+     */
+    public static function util_validate_mobile(string $mobile): bool
+    {
+        // 中国大陆手机号验证规则
+        return preg_match('/^1[3-9]\d{9}$/', $mobile) === 1;
+    }
+    
+    /**
+     * 安全随机数生成（工具方法封装）
+     */
+    public static function util_secure_random(int $length = 32, bool $urlSafe = false): string
+    {
+        $random = self::generateSecureRandom($length);
+        if ($urlSafe) {
+            return rtrim(strtr($random, '+/', '-_'), '=');
+        }
+        return $random;
+    }
+    
+    /**
+     * 安全字符串比较（工具方法封装）
+     */
+    public static function util_secure_compare(string $knownString, string $userString): bool
+    {
+        return self::secureCompare($knownString, $userString);
+    }
 
     /**
      * 一维数组转树形结构（非递归实现）
@@ -338,11 +465,12 @@ class Utils
      * @param string $data 要加密的数据
      * @param string|null $key 加密密钥
      * @param int $expiry 过期时间（秒），0表示不过期
+     * @param int|null $currentTime 用于测试的当前时间（可选）
      * @return string 加密后的Token
      */
-    public static function util_encrypt_token(string $data, ?string $key = null, int $expiry = 0): string
+    public static function util_encrypt_token(string $data, ?string $key = null, int $expiry = 0, ?int $currentTime = null): string
     {
-        return Security::encryptForToken($data, $key, $expiry);
+        return Security::encryptForToken($data, $key, $expiry, $currentTime);
     }
 
     /**
