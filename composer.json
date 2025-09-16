@@ -2,13 +2,14 @@
     "name": "mofei/mofeier",
     "description": "A powerful PHP toolkit for common development tasks",
     "type": "library",
-    "license": "MIT",
+    "license": "Apache License 2.0",
     "authors": [
         {
             "name": "mofeier",
             "email": "mofeier@example.com"
         }
     ],
+    "version": "2.1.1",
     "require": {
         "php": ">=8.1"
     },
