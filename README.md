@@ -1,4 +1,4 @@
-# Mofeier - PHP通用工具包
+# PHP通用工具包
 
 一个简洁、高效、功能丰富的PHP通用工具包，为项目开发提供基础功能支持。
 
@@ -28,7 +28,7 @@
 ## 安装
 
 ```bash
-composer require mofei/mofeier
+composer require mofei/tools
 ```
 
 ## 使用示例
